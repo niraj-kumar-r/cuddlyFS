@@ -1,4 +1,6 @@
 use log;
+
+use super::Transport;
 pub struct TcpTransport {
     listen_address: std::net::SocketAddr,
     listener: Option<tokio::net::TcpListener>,
@@ -23,23 +25,6 @@ impl TcpTransport {
         }
     }
 
-    pub async fn listen_and_accept(&mut self) -> Result<(), std::io::Error> {
-        let listener = tokio::net::TcpListener::bind(&self.listen_address).await;
-
-        match listener {
-            Ok(listener) => {
-                log::info!("Listening on {}", self.listen_address);
-                self.listener = Some(listener);
-            }
-            Err(e) => {
-                log::warn!("Failed to bind listener: {:?}", e);
-                return Err(e);
-            }
-        }
-
-        self.start_accept_loop().await
-    }
-
     async fn start_accept_loop(&mut self) -> Result<(), std::io::Error> {
         while let Some(listener) = &self.listener {
             match listener.accept().await {
@@ -60,11 +45,32 @@ impl TcpTransport {
     }
 }
 
+impl Transport for TcpTransport {
+    async fn listen_and_accept(&mut self) -> Result<(), std::io::Error> {
+        let listener = tokio::net::TcpListener::bind(&self.listen_address).await;
+
+        match listener {
+            Ok(listener) => {
+                log::info!("Listening on {}", self.listen_address);
+                self.listener = Some(listener);
+            }
+            Err(e) => {
+                log::warn!("Failed to bind listener: {:?}", e);
+                return Err(e);
+            }
+        }
+
+        self.start_accept_loop().await
+    }
+}
+
 #[derive(Debug)]
 pub struct TcpPeer {
     socket: tokio::net::TcpStream,
     peer_addr: std::net::SocketAddr,
     is_outbound: bool,
+    // if we dial and retrieve a conn => outbound == true
+    // if we accept and retrieve a conn => outbound == false
 }
 
 impl TcpPeer {
