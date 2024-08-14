@@ -1,3 +1,4 @@
+use log;
 pub struct TcpTransport {
     listen_address: std::net::SocketAddr,
     listener: Option<tokio::net::TcpListener>,
@@ -16,41 +17,63 @@ impl TcpTransport {
                 peers: std::collections::HashMap::new(),
             }),
             Err(e) => {
-                eprintln!("Failed to parse listen address: {:?}", e);
+                log::error!("Failed to parse listen address: {:?}", e);
                 Err(e)
             }
         }
     }
 
-    pub async fn listen_and_accept(&mut self) {
-        let listener = tokio::net::TcpListener::bind(&self.listen_address)
-            .await
-            .unwrap();
-        self.listener = Some(listener);
+    pub async fn listen_and_accept(&mut self) -> Result<(), std::io::Error> {
+        let listener = tokio::net::TcpListener::bind(&self.listen_address).await;
+
+        match listener {
+            Ok(listener) => {
+                log::info!("Listening on {}", self.listen_address);
+                self.listener = Some(listener);
+            }
+            Err(e) => {
+                log::warn!("Failed to bind listener: {:?}", e);
+                return Err(e);
+            }
+        }
 
         while let Some(listener) = &self.listener {
             match listener.accept().await {
                 Ok((socket, addr)) => {
-                    println!("Accepted connection from {:?}", addr);
-                    let peer = TcpPeer::new(socket, addr);
+                    let peer = TcpPeer::new(socket, addr, true);
                     self.peers.insert(addr, peer);
+                    log::info!("Accepted connection from {:?}", addr);
+                    log::info!("Peers: {:?}", self.peers);
                 }
                 Err(e) => {
-                    eprintln!("Failed to accept connection: {:?}", e);
+                    log::warn!("Failed to accept connection: {:?}", e);
+                    return Err(e);
                 }
             }
         }
+
+        Ok(())
     }
 }
 
+#[derive(Debug)]
 pub struct TcpPeer {
     socket: tokio::net::TcpStream,
     peer_addr: std::net::SocketAddr,
+    is_outbound: bool,
 }
 
 impl TcpPeer {
-    pub fn new(socket: tokio::net::TcpStream, peer_addr: std::net::SocketAddr) -> Self {
-        Self { socket, peer_addr }
+    pub fn new(
+        socket: tokio::net::TcpStream,
+        peer_addr: std::net::SocketAddr,
+        is_outbound: bool,
+    ) -> Self {
+        Self {
+            socket,
+            peer_addr,
+            is_outbound,
+        }
     }
 }
 
@@ -64,7 +87,10 @@ mod tests {
         assert!(transport.is_ok());
 
         // test the address
-        let transport = transport.unwrap();
+        let mut transport = transport.unwrap();
         assert_eq!(transport.listen_address, "127.0.0.1:4000".parse().unwrap());
+
+        // test the listener
+        assert!(transport.listener.is_none());
     }
 }
