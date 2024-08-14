@@ -37,6 +37,10 @@ impl TcpTransport {
             }
         }
 
+        self.start_accept_loop().await
+    }
+
+    async fn start_accept_loop(&mut self) -> Result<(), std::io::Error> {
         while let Some(listener) = &self.listener {
             match listener.accept().await {
                 Ok((socket, addr)) => {
@@ -87,7 +91,7 @@ mod tests {
         assert!(transport.is_ok());
 
         // test the address
-        let mut transport = transport.unwrap();
+        let transport = transport.unwrap();
         assert_eq!(transport.listen_address, "127.0.0.1:4000".parse().unwrap());
 
         // test the listener
