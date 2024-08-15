@@ -1,9 +1,10 @@
 use log;
 
-use super::Transport;
+use super::{handshake, Transport};
 pub struct TcpTransport {
     listen_address: std::net::SocketAddr,
     listener: Option<tokio::net::TcpListener>,
+    handshake_func: handshake::HandshakeFunc,
     mu: tokio::sync::Mutex<()>,
     peers: std::collections::HashMap<std::net::SocketAddr, TcpPeer>,
 }
@@ -15,6 +16,7 @@ impl TcpTransport {
             Ok(listen_address) => Ok(Self {
                 listen_address,
                 listener: None,
+                handshake_func: handshake::NOP_HANDSHAKE_FUNC,
                 mu: tokio::sync::Mutex::new(()),
                 peers: std::collections::HashMap::new(),
             }),
@@ -68,9 +70,9 @@ impl Transport for TcpTransport {
 pub struct TcpPeer {
     socket: tokio::net::TcpStream,
     peer_addr: std::net::SocketAddr,
-    is_outbound: bool,
     // if we dial and retrieve a conn => outbound == true
     // if we accept and retrieve a conn => outbound == false
+    is_outbound: bool,
 }
 
 impl TcpPeer {

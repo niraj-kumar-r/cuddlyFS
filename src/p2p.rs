@@ -1,3 +1,4 @@
+pub mod handshake;
 pub mod tcp_transport;
 
 pub trait Transport {
@@ -5,3 +6,5 @@ pub trait Transport {
         &mut self,
     ) -> impl std::future::Future<Output = Result<(), std::io::Error>> + Send;
 }
+
+pub trait Peer {}
