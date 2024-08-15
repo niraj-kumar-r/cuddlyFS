@@ -1,5 +1,7 @@
 pub mod tcp_transport;
 
 pub trait Transport {
-    async fn listen_and_accept(&mut self) -> Result<(), std::io::Error>;
+    fn listen_and_accept(
+        &mut self,
+    ) -> impl std::future::Future<Output = Result<(), std::io::Error>> + Send;
 }
