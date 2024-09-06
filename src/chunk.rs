@@ -1,11 +1,13 @@
+use bytes::Bytes;
+
 pub struct Chunk {
     pub chunk_id: String,
-    pub data: Vec<u8>,
-    pub checksum: String,
+    pub data: Bytes,      // Efficient zero-copy byte data
+    pub checksum: String, // Integrity verification
 }
 
 impl Chunk {
-    pub fn new(chunk_id: String, data: Vec<u8>) -> Self {
+    pub fn new(chunk_id: String, data: Bytes) -> Self {
         let checksum = calculate_checksum(&data);
         Chunk {
             chunk_id,
@@ -19,6 +21,7 @@ impl Chunk {
     }
 }
 
-fn calculate_checksum(data: &[u8]) -> String {
-    format!("{:x}", md5::compute(data))
+// Updated checksum calculation to accept Bytes
+fn calculate_checksum(data: &Bytes) -> String {
+    format!("{:x}", md5::compute(data)) // MD5 checksum as an example
 }
