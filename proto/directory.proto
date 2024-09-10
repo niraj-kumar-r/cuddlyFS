@@ -21,7 +21,7 @@ message ListDirectoryRequest {
 // Response containing directory entries
 message ListDirectoryResponse {
   repeated DirectoryEntry entries = 1;
-  cuddlyproto.Error error = 2;
+  cuddlyproto.StatusCode status = 2;
 }
 
 // Request to create a directory
@@ -32,7 +32,7 @@ message CreateDirectoryRequest {
 
 // Response after creating a directory
 message CreateDirectoryResponse {
-  cuddlyproto.Error error = 1;
+  cuddlyproto.StatusCode status = 1;
 }
 
 // Request to delete a directory
@@ -44,7 +44,7 @@ message DeleteDirectoryRequest {
 
 // Response after deleting a directory
 message DeleteDirectoryResponse {
-  cuddlyproto.Error error = 1;
+  cuddlyproto.StatusCode status = 1;
 }
 
 // Directory service with directory-related operations

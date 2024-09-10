@@ -12,7 +12,7 @@ message ReplicateFileRequest {
 
 // Response after file replication
 message ReplicateFileResponse {
-  cuddlyproto.Error error = 1;
+  cuddlyproto.StatusCode status = 1;
 }
 
 // Request to synchronize metadata between nodes
@@ -22,7 +22,7 @@ message SynchronizeMetadataRequest {
 
 // Response after metadata synchronization
 message SynchronizeMetadataResponse {
-  cuddlyproto.Error error = 1;
+  cuddlyproto.StatusCode status = 1;
 }
 
 // Node service for inter-node communication

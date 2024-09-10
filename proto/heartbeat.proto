@@ -16,6 +16,5 @@ message HeartbeatRequest {
 
 // Heartbeat response message
 message HeartbeatResponse {
-    bool success = 1;    // Indicates whether the heartbeat was received successfully
-    cuddlyproto.Error error = 2;  // Error message if the heartbeat was not received successfully
+    cuddlyproto.StatusCode status = 2;  // Error message if the heartbeat was not received successfully
 }

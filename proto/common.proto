@@ -2,8 +2,20 @@ syntax = "proto3";
 
 package cuddlyproto;
 
+enum StatusEnum {
+  OK      = 0;
+  E_UNKWN = 1;    // Unknown error
+  E_NOENT = 2;    // File does not exist
+  E_NOBLK = 3;    // Block does not exist
+  E_EXIST = 4;    // File already exists
+  E_IO    = 5;    // I/O Error
+  E_INVAL = 6;    // Invalid arguments
+  E_BUSY  = 7;    // File is being written to
+}
+
 // Represents an error message with a code and description
-message Error {
-  int32 code = 1;
-  string message = 2;
+message StatusCode {
+  bool success = 1;
+  StatusEnum code = 2;
+  string message = 3;
 }

@@ -19,7 +19,7 @@ message AuthenticateRequest {
 // Response containing an authentication token
 message AuthenticateResponse {
   AuthToken auth_token = 1;
-  cuddlyproto.Error error = 2;
+  cuddlyproto.StatusCode status = 2;
 }
 
 // Authentication service for user authentication

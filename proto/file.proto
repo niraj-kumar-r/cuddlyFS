@@ -32,7 +32,7 @@ message OpenFileRequest {
 // Response after opening a file
 message OpenFileResponse {
   string file_handle = 1;
-  cuddlyproto.Error error = 2;
+  cuddlyproto.StatusCode status = 2;
 }
 
 // Request to read from a file
@@ -46,7 +46,7 @@ message ReadFileRequest {
 // Response containing read data
 message ReadFileResponse {
   bytes data = 1;
-  cuddlyproto.Error error = 2;
+  cuddlyproto.StatusCode status = 2;
 }
 
 // Request to write to a file
@@ -59,7 +59,7 @@ message WriteFileRequest {
 
 // Response after writing to a file
 message WriteFileResponse {
-  cuddlyproto.Error error = 1;
+  cuddlyproto.StatusCode status = 1;
 }
 
 // Request to close a file
@@ -70,7 +70,7 @@ message CloseFileRequest {
 
 // Response after closing a file
 message CloseFileResponse {
-  cuddlyproto.Error error = 1;
+  cuddlyproto.StatusCode status = 1;
 }
 
 // File service with file-related operations
