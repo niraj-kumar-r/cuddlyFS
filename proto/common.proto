@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package dfs.common;
+package cuddlyfs;
 
 // Represents an error message with a code and description
 message Error {

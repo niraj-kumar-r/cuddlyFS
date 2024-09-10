@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package dfs.node;
+package cuddlyfs;
 
 import "proto/auth.proto";
 import "proto/file.proto";
@@ -12,17 +12,17 @@ message ReplicateFileRequest {
 
 // Response after file replication
 message ReplicateFileResponse {
-  dfs.auth.Error error = 1;
+  cuddlyfs.Error error = 1;
 }
 
 // Request to synchronize metadata between nodes
 message SynchronizeMetadataRequest {
-  dfs.file.FileMetadata metadata = 1;
+  cuddlyfs.FileMetadata metadata = 1;
 }
 
 // Response after metadata synchronization
 message SynchronizeMetadataResponse {
-  dfs.auth.Error error = 1;
+  cuddlyfs.Error error = 1;
 }
 
 // Node service for inter-node communication

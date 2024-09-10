@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package dfs.auth;
+package cuddlyfs;
 
 // Authentication token for securing requests
 message AuthToken {

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package dfs.file;
+package cuddlyfs;
 
 import "proto/auth.proto";
 
@@ -17,7 +17,7 @@ message FileMetadata {
 
 // Request to open a file
 message OpenFileRequest {
-  dfs.auth.AuthToken auth_token = 1;
+  cuddlyfs.AuthToken auth_token = 1;
   string file_path = 2;
 
   enum Mode {
@@ -31,12 +31,12 @@ message OpenFileRequest {
 // Response after opening a file
 message OpenFileResponse {
   string file_handle = 1;
-  dfs.auth.Error error = 2;
+  cuddlyfs.Error error = 2;
 }
 
 // Request to read from a file
 message ReadFileRequest {
-  dfs.auth.AuthToken auth_token = 1;
+  cuddlyfs.AuthToken auth_token = 1;
   string file_handle = 2;
   int64 offset = 3;
   int64 size = 4;
@@ -45,12 +45,12 @@ message ReadFileRequest {
 // Response containing read data
 message ReadFileResponse {
   bytes data = 1;
-  dfs.auth.Error error = 2;
+  cuddlyfs.Error error = 2;
 }
 
 // Request to write to a file
 message WriteFileRequest {
-  dfs.auth.AuthToken auth_token = 1;
+  cuddlyfs.AuthToken auth_token = 1;
   string file_handle = 2;
   int64 offset = 3;
   bytes data = 4;
@@ -58,18 +58,18 @@ message WriteFileRequest {
 
 // Response after writing to a file
 message WriteFileResponse {
-  dfs.auth.Error error = 1;
+  cuddlyfs.Error error = 1;
 }
 
 // Request to close a file
 message CloseFileRequest {
-  dfs.auth.AuthToken auth_token = 1;
+  cuddlyfs.AuthToken auth_token = 1;
   string file_handle = 2;
 }
 
 // Response after closing a file
 message CloseFileResponse {
-  dfs.auth.Error error = 1;
+  cuddlyfs.Error error = 1;
 }
 
 // File service with file-related operations
