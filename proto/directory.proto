@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package dfs.directory;
+
+import "proto/auth.proto";
+import "proto/file.proto";
+
+message DirectoryEntry {
+  string name = 1;
+  bool is_directory = 2;
+  dfs.file.FileMetadata metadata = 3;
+}
+
+// Request to list directory contents
+message ListDirectoryRequest {
+  dfs.auth.AuthToken auth_token = 1;
+  string directory_path = 2;
+}
+
+// Response containing directory entries
+message ListDirectoryResponse {
+  repeated DirectoryEntry entries = 1;
+  dfs.auth.Error error = 2;
+}
+
+// Request to create a directory
+message CreateDirectoryRequest {
+  dfs.auth.AuthToken auth_token = 1;
+  string directory_path = 2;
+}
+
+// Response after creating a directory
+message CreateDirectoryResponse {
+  dfs.auth.Error error = 1;
+}
+
+// Request to delete a directory
+message DeleteDirectoryRequest {
+  dfs.auth.AuthToken auth_token = 1;
+  string directory_path = 2;
+  bool recursive = 3;
+}
+
+// Response after deleting a directory
+message DeleteDirectoryResponse {
+  dfs.auth.Error error = 1;
+}
+
+// Directory service with directory-related operations
+service DirectoryService {
+  rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryResponse);
+  rpc CreateDirectory (CreateDirectoryRequest) returns (CreateDirectoryResponse);
+  rpc DeleteDirectory (DeleteDirectoryRequest) returns (DeleteDirectoryResponse);
+}

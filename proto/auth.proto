@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package dfs.auth;
+
+// Authentication token for securing requests
+message AuthToken {
+  string token = 1;
+}
+
+// Error message with a code and description
+message Error {
+  int32 code = 1;
+  string message = 2;
+}
+
+// Request for authentication
+message AuthenticateRequest {
+  string username = 1;
+  string password = 2;
+}
+
+// Response containing an authentication token
+message AuthenticateResponse {
+  AuthToken auth_token = 1;
+  Error error = 2;
+}
+
+// Authentication service for user authentication
+service AuthenticationService {
+  rpc Authenticate (AuthenticateRequest) returns (AuthenticateResponse);
+}

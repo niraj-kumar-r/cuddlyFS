@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package dfs.node;
+
+import "proto/auth.proto";
+import "proto/file.proto";
+
+message ReplicateFileRequest {
+  string file_path = 1;
+  bytes data = 2;
+}
+
+// Response after file replication
+message ReplicateFileResponse {
+  dfs.auth.Error error = 1;
+}
+
+// Request to synchronize metadata between nodes
+message SynchronizeMetadataRequest {
+  dfs.file.FileMetadata metadata = 1;
+}
+
+// Response after metadata synchronization
+message SynchronizeMetadataResponse {
+  dfs.auth.Error error = 1;
+}
+
+// Node service for inter-node communication
+service NodeService {
+  rpc ReplicateFile (ReplicateFileRequest) returns (ReplicateFileResponse);
+  rpc SynchronizeMetadata (SynchronizeMetadataRequest) returns (SynchronizeMetadataResponse);
+}
