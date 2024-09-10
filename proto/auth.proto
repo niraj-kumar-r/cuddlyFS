@@ -2,16 +2,13 @@ syntax = "proto3";
 
 package cuddlyfs;
 
+import "common.proto";
+
 // Authentication token for securing requests
 message AuthToken {
   string token = 1;
 }
 
-// Error message with a code and description
-message Error {
-  int32 code = 1;
-  string message = 2;
-}
 
 // Request for authentication
 message AuthenticateRequest {
@@ -22,7 +19,7 @@ message AuthenticateRequest {
 // Response containing an authentication token
 message AuthenticateResponse {
   AuthToken auth_token = 1;
-  Error error = 2;
+  cuddlyfs.Error error = 2;
 }
 
 // Authentication service for user authentication

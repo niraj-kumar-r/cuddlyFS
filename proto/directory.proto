@@ -2,8 +2,9 @@ syntax = "proto3";
 
 package cuddlyfs;
 
-import "proto/auth.proto";
-import "proto/file.proto";
+import "auth.proto";
+import "file.proto";
+import "common.proto";
 
 message DirectoryEntry {
   string name = 1;

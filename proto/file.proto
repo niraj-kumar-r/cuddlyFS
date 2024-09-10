@@ -2,7 +2,8 @@ syntax = "proto3";
 
 package cuddlyfs;
 
-import "proto/auth.proto";
+import "auth.proto";
+import "common.proto";
 
 message FileMetadata {
   int64 size = 1;

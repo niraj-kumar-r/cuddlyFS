@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package cuddlyfs;
 
-import "proto/auth.proto";
-import "proto/file.proto";
+import "file.proto";
+import "common.proto";
 
 message ReplicateFileRequest {
   string file_path = 1;
