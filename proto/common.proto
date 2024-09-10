@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package cuddlyfs;
+package cuddlyproto;
 
 // Represents an error message with a code and description
 message Error {

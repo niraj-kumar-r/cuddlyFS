@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package cuddlyfs;
+package cuddlyproto;
 
 import "common.proto";
 
@@ -19,7 +19,7 @@ message AuthenticateRequest {
 // Response containing an authentication token
 message AuthenticateResponse {
   AuthToken auth_token = 1;
-  cuddlyfs.Error error = 2;
+  cuddlyproto.Error error = 2;
 }
 
 // Authentication service for user authentication

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package cuddlyfs;
+package cuddlyproto;
 
 import "auth.proto";
 import "file.proto";
@@ -9,42 +9,42 @@ import "common.proto";
 message DirectoryEntry {
   string name = 1;
   bool is_directory = 2;
-  cuddlyfs.FileMetadata metadata = 3;
+  cuddlyproto.FileMetadata metadata = 3;
 }
 
 // Request to list directory contents
 message ListDirectoryRequest {
-  cuddlyfs.AuthToken auth_token = 1;
+  cuddlyproto.AuthToken auth_token = 1;
   string directory_path = 2;
 }
 
 // Response containing directory entries
 message ListDirectoryResponse {
   repeated DirectoryEntry entries = 1;
-  cuddlyfs.Error error = 2;
+  cuddlyproto.Error error = 2;
 }
 
 // Request to create a directory
 message CreateDirectoryRequest {
-  cuddlyfs.AuthToken auth_token = 1;
+  cuddlyproto.AuthToken auth_token = 1;
   string directory_path = 2;
 }
 
 // Response after creating a directory
 message CreateDirectoryResponse {
-  cuddlyfs.Error error = 1;
+  cuddlyproto.Error error = 1;
 }
 
 // Request to delete a directory
 message DeleteDirectoryRequest {
-  cuddlyfs.AuthToken auth_token = 1;
+  cuddlyproto.AuthToken auth_token = 1;
   string directory_path = 2;
   bool recursive = 3;
 }
 
 // Response after deleting a directory
 message DeleteDirectoryResponse {
-  cuddlyfs.Error error = 1;
+  cuddlyproto.Error error = 1;
 }
 
 // Directory service with directory-related operations
