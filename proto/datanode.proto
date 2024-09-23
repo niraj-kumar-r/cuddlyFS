@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package cuddlyproto;
 
+import "common.proto";
+
 message DatanodeIDProto {
     string ipAddr = 1;          // IP address of the datanode
     string hostName = 2;        // Hostname of the datanode
@@ -10,4 +12,11 @@ message DatanodeIDProto {
     uint32 infoPort = 5;        // Datanode http port
     uint32 ipcPort = 6;         // IPC server port
     uint32 infoSecurePort = 7;  // Datanode https port
+}
+
+message DatanodeRegistrationProto {
+    DatanodeIDProto datanodeID = 1;    // Datanode information
+    StorageInfoProto storageInfo = 2;  // Node information
+    ExportedBlockKeysProto keys = 3;   // Block keys
+    string softwareVersion = 4;        // Software version of the DN, e.g. "2.0.0"
 }

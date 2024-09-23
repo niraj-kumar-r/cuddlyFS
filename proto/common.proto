@@ -19,3 +19,28 @@ message StatusCode {
   StatusEnum code = 2;
   string message = 3;
 }
+
+
+///Common node information shared by all the nodes in the cluster
+message StorageInfoProto {
+  uint32 layoutVersion = 1; // Layout version of the file system
+  uint32 namespaceID = 2;    // File system namespace ID
+  string clusterID = 3;     // ID of the cluster
+  uint64 creationTime = 4;         // File system creation time
+}
+
+///Block access token information
+message BlockKeyProto {
+  uint32 keyId = 1;      // Key identifier
+  uint64 expiryDate = 2; // Expiry time in milliseconds
+  optional bytes keyBytes = 3;    // Key secret
+}
+
+///Current key and set of block keys at the namenode.
+message ExportedBlockKeysProto {
+  bool isBlockTokenEnabled = 1;
+  uint64 keyUpdateInterval = 2;
+  uint64 tokenLifeTime = 3;
+  BlockKeyProto currentKey = 4;
+  repeated BlockKeyProto allKeys = 5;
+}

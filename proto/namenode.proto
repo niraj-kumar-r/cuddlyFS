@@ -2,12 +2,30 @@ syntax = "proto3";
 
 package cuddlyproto;
 
-import "datanode.proto";
+import "common.proto";
 
-message DatanodeRegistrationProto {
-    DatanodeIDProto datanodeID = 1;    // Datanode information
+///Information sent by a namenode to identify itself to the primary namenode.
+message NamenodeRegistrationProto {
+    string rpcAddress = 1;    // host:port of the namenode RPC address
+    string httpAddress = 2;   // host:port of the namenode http server
+    enum NamenodeRoleProto {
+        NAMENODE = 0;
+        BACKUP = 1;
+        CHECKPOINT = 2;
+    }
+    StorageInfoProto storageInfo = 3;  // Node information
+    NamenodeRoleProto role = 4;        // Namenode role
 }
 
-// StorageInfoProto storageInfo = 2;  // Node information
-// ExportedBlockKeysProto keys = 3;   // Block keys
-// string softwareVersion = 4;        // Software version of the DN, e.g. "2.0.0"
+
+///state - State the NN is in when returning response to the DN
+///txid - Highest transaction ID this NN has seen
+message NNHAStatusHeartbeatProto {
+    enum State {
+        ACTIVE = 0;
+        STANDBY = 1;
+        OBSERVER = 2;
+    }
+    State state = 1;
+    uint64 txid = 2;
+}
