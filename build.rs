@@ -7,6 +7,9 @@ fn main() {
                 "proto/file.proto",
                 "proto/node.proto",
                 "proto/directory.proto",
+                "proto/datanode.proto",
+                "proto/namenode.proto",
+                "proto/heartbeat.proto",
             ],
             &["proto"],
         )
