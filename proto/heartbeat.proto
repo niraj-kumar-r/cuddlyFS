@@ -4,6 +4,7 @@ package cuddlyproto;
 
 import "common.proto";
 import "datanode.proto";
+import "namenode.proto";
 
 /// Heartbeat request message : 
 message HeartbeatRequest {
@@ -13,8 +14,28 @@ message HeartbeatRequest {
 
 // Heartbeat response message
 message HeartbeatResponse {
-    StatusCode status = 2;  // Error message if the heartbeat was not received successfully
+    StatusCode status = 1;  // Error message if the heartbeat was not received successfully
+    NNHAStatusHeartbeatProto haStatus = 2; // High availability status
 }
+
+/**
+ * Commands sent from namenode to the datanodes
+ */
+//  message DatanodeCommandProto {
+    // enum Type {
+    //   BalancerBandwidthCommand = 0;
+    //   BlockCommand = 1;
+    //   BlockRecoveryCommand = 2;
+    //   FinalizeCommand = 3;
+    //   KeyUpdateCommand = 4;
+    //   RegisterCommand = 5;
+    //   UnusedUpgradeCommand = 6;
+    //   NullDatanodeCommand = 7;
+    //   BlockIdCommand = 8;
+    //   BlockECReconstructionCommand = 9;
+    // }
+//   
+    // required Type cmdType = 1;    // Type of the command
 
 // Heartbeat service definition
 service HeartbeatService {
