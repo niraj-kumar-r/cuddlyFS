@@ -1,10 +1,14 @@
 use chrono::prelude::{DateTime, Utc};
 use local_ip_address::local_ip;
 use std::vec;
+use tokio::task;
+use tokio::time::{interval, Duration};
+use tonic::transport::Channel;
+use tonic::Response;
 use uuid::Uuid;
 
 use cuddlyfs::heartbeat_service_client::HeartbeatServiceClient;
-use cuddlyfs::HeartbeatRequest;
+use cuddlyfs::{HeartbeatRequest, HeartbeatResponse};
 
 pub mod cuddlyfs {
     tonic::include_proto!("cuddlyproto");
@@ -12,9 +16,32 @@ pub mod cuddlyfs {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let node = HeartbeatServiceClient::connect("http://[::1]:50051").await?;
+
+    let mut node_clone = node.clone();
+    let handle = task::spawn(async move {
+        let mut interval = interval(Duration::from_secs(3)); // Set the interval to 10 seconds
+        loop {
+            interval.tick().await;
+            match send_heartbeat(&mut node_clone).await {
+                Ok(_) => println!("Heartbeat sent successfully"),
+                Err(e) => eprintln!("Failed to send heartbeat: {:?}", e),
+            }
+        }
+    });
+
+    print!("Main thread is free");
+
+    handle.await.unwrap();
+
+    Ok(())
+}
+
+async fn send_heartbeat(
+    client: &mut HeartbeatServiceClient<Channel>,
+) -> Result<Response<HeartbeatResponse>, Box<dyn std::error::Error>> {
     let ip = local_ip().unwrap();
     let now: DateTime<Utc> = Utc::now();
-    let mut node = HeartbeatServiceClient::connect("http://[::1]:50051").await?;
 
     let req = tonic::Request::new(HeartbeatRequest {
         registration: Some(cuddlyfs::DatanodeRegistrationProto {
@@ -49,9 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         reports: vec![],
     });
 
-    let response = node.heartbeat(req).await?;
+    let response = client.heartbeat(req).await?;
 
-    println!("RESPONSE={:?}", response);
-
-    Ok(())
+    Ok(response)
 }
