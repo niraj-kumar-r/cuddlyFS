@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package cuddlyproto;
+
+import "datanode.proto";
+
+message DatanodeRegistrationProto {
+    DatanodeIDProto datanodeID = 1;    // Datanode information
+}
+
+// StorageInfoProto storageInfo = 2;  // Node information
+// ExportedBlockKeysProto keys = 3;   // Block keys
+// string softwareVersion = 4;        // Software version of the DN, e.g. "2.0.0"
