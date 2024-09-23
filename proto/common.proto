@@ -44,3 +44,34 @@ message ExportedBlockKeysProto {
   BlockKeyProto currentKey = 4;
   repeated BlockKeyProto allKeys = 5;
 }
+
+enum StorageTypeProto {
+  DISK = 0;
+  SSD = 1;
+  ARCHIVE = 2;
+  RAM_DISK = 3;
+  PROVIDED = 4;
+  NVDIMM = 5;
+}
+
+message DatanodeStorageProto {
+  enum StorageState {
+    NORMAL = 0;
+    READ_ONLY_SHARED = 1;
+  }
+
+  string storageUuid = 1;
+  StorageState state = 2;
+  StorageTypeProto storageType = 3;
+}
+
+message StorageReportProto {
+  DatanodeStorageProto storage = 1;
+  bool failed = 2;
+  uint64 capacity = 3;
+  uint64 dfsUsed = 4;
+  uint64 remaining = 5;
+  uint64 blockPoolUsed = 6;
+  uint64 nonDfsUsed = 7;
+  string mount = 8;
+}

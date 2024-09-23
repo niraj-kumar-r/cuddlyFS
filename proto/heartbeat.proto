@@ -3,7 +3,7 @@ syntax = "proto3";
 package cuddlyproto;
 
 import "common.proto";
-import "namenode.proto";
+import "datanode.proto";
 
 // Heartbeat service definition
 service HeartbeatService {
@@ -13,6 +13,7 @@ service HeartbeatService {
 /// Heartbeat request message : 
 message HeartbeatRequest {
     DatanodeRegistrationProto registration = 1; // Datanode info
+    repeated StorageReportProto reports = 2;
 }
 
 // Heartbeat response message
