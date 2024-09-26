@@ -2,5 +2,5 @@ pub mod cuddlyproto {
     tonic::include_proto!("cuddlyproto");
 }
 pub mod datanode;
-mod fs_client;
-mod namenode;
+pub mod fs_client;
+pub mod namenode;
