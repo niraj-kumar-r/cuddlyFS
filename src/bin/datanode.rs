@@ -1,7 +1,7 @@
 use tokio::task;
 use tokio::time::{interval, Duration};
 
-use cuddlyfs::datanode::{self, Datanode};
+use cuddlyfs::datanode::Datanode;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
