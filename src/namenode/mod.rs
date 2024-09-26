@@ -10,6 +10,17 @@ use tonic::{transport::Server, Request, Response, Status};
 #[derive(Debug, Default, Clone)]
 pub struct Namenode {}
 
+impl Namenode {
+    pub async fn run(&self, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
+        Server::builder()
+            .add_service(HeartbeatServiceServer::new(Namenode::clone(&self)))
+            .serve(addr)
+            .await?;
+
+        Ok(())
+    }
+}
+
 #[tonic::async_trait]
 impl HeartbeatService for Namenode {
     async fn heartbeat(
@@ -31,16 +42,5 @@ impl HeartbeatService for Namenode {
         };
 
         Ok(Response::new(response))
-    }
-}
-
-impl Namenode {
-    pub async fn run(&self, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
-        Server::builder()
-            .add_service(HeartbeatServiceServer::new(Namenode::clone(&self)))
-            .serve(addr)
-            .await?;
-
-        Ok(())
     }
 }
