@@ -1,12 +1,11 @@
 use std::net::SocketAddr;
 use tonic::{transport::Server, Request, Response, Status};
 
-use cuddlyfs::heartbeat_service_server::{HeartbeatService, HeartbeatServiceServer};
-use cuddlyfs::{HeartbeatRequest, HeartbeatResponse, NnhaStatusHeartbeatProto, StatusCode};
-
-pub mod cuddlyfs {
-    tonic::include_proto!("cuddlyproto");
-}
+use cuddlyfs::cuddlyproto::heartbeat_service_server::{HeartbeatService, HeartbeatServiceServer};
+use cuddlyfs::cuddlyproto::{
+    nnha_status_heartbeat_proto, HeartbeatRequest, HeartbeatResponse, NnhaStatusHeartbeatProto,
+    StatusCode, StatusEnum,
+};
 
 #[derive(Debug, Default)]
 pub struct Namenode {}
@@ -22,11 +21,11 @@ impl HeartbeatService for Namenode {
         let response = HeartbeatResponse {
             status: Some(StatusCode {
                 success: true,
-                code: cuddlyfs::StatusEnum::Ok as i32,
+                code: StatusEnum::Ok as i32,
                 message: "Ok".to_string(),
             }),
             ha_status: Some(NnhaStatusHeartbeatProto {
-                state: cuddlyfs::nnha_status_heartbeat_proto::State::Active as i32,
+                state: nnha_status_heartbeat_proto::State::Active as i32,
                 txid: 0,
             }),
         };
