@@ -5,24 +5,34 @@ use crate::cuddlyproto::{
     nnha_status_heartbeat_proto, HeartbeatRequest, HeartbeatResponse, NnhaStatusHeartbeatProto,
     StatusCode, StatusEnum,
 };
+use log::info;
+use tokio::sync::mpsc::{self, UnboundedSender};
 use tokio_util::sync::CancellationToken;
 use tonic::{transport::Server, Request, Response, Status};
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct Namenode {
     cancel_token: CancellationToken,
+    shutdown_send: mpsc::UnboundedSender<i8>,
 }
 
 impl Namenode {
-    pub fn new(cancel_token: CancellationToken) -> Self {
-        Self { cancel_token }
+    pub fn new(cancel_token: CancellationToken, shutdown_send: UnboundedSender<i8>) -> Self {
+        Self {
+            cancel_token,
+            shutdown_send,
+        }
     }
 
     pub async fn run(&self, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
-        Server::builder()
-            .add_service(HeartbeatServiceServer::new(Namenode::clone(&self)))
-            .serve(addr)
-            .await?;
+        tokio::select! {
+        _ = self.cancel_token.cancelled() => {
+            info!("Namenode Run cancelled");
+        },
+        _ = Server::builder()
+        .add_service(HeartbeatServiceServer::new(Namenode::clone(&self)))
+        .serve(addr) => {}
+        }
 
         Ok(())
     }

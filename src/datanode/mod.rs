@@ -59,7 +59,7 @@ impl Datanode {
                     warn!("Failed to send heartbeat: {:?}", e);
                     consecutive_errors += 1;
 
-                    if consecutive_errors >= 3 {
+                    if consecutive_errors >= 5 {
                         error!("5 consecutive heartbeat failures, initiating shutdown...");
                         self.shutdown_send.send(1).unwrap();
                     }
