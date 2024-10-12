@@ -16,6 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let namenode: Namenode = Namenode::new(cancel_token.clone(), shutdown_send);
 
     let running_namenode_handle = tokio::spawn(async move {
+        info!("Starting namenode on {}", addr);
         let _ = namenode.run(addr).await;
     });
 
