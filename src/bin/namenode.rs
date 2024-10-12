@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let addr: SocketAddr = "[::1]:50051".parse().unwrap();
     let (shutdown_send, mut shutdown_recv) = mpsc::unbounded_channel::<i8>();
-    let cancel_token = CancellationToken::new();
+    let cancel_token: CancellationToken = CancellationToken::new();
     let namenode: Namenode = Namenode::new(cancel_token.clone(), shutdown_send);
 
     let running_namenode_handle = tokio::spawn(async move {
