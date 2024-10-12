@@ -2,16 +2,21 @@ use crate::cuddlyproto;
 
 use chrono::Utc;
 use local_ip_address::local_ip;
+use log::{error, info, warn};
+use tokio::sync::mpsc;
+use tokio_util::sync::CancellationToken;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Datanode {
     pub datanode_id: cuddlyproto::DatanodeIdProto,
+    cancel_token: CancellationToken,
+    shutdown_send: mpsc::UnboundedSender<i8>,
 }
 
 impl Datanode {
-    pub fn new() -> Self {
+    pub fn new(cancel_token: CancellationToken, shutdown_send: mpsc::UnboundedSender<i8>) -> Self {
         Datanode {
             datanode_id: cuddlyproto::DatanodeIdProto {
                 ip_addr: local_ip().unwrap().to_string(),
@@ -22,6 +27,44 @@ impl Datanode {
                 ipc_port: 50020,
                 info_secure_port: 50070,
             },
+            cancel_token,
+            shutdown_send,
+        }
+    }
+
+    pub async fn run(self) -> Result<(), Box<dyn std::error::Error>> {
+        tokio::select! {
+            _ = self.heartbeat_loop() => {},
+            _ = self.cancel_token.cancelled() => {
+                warn!("Heartbeat loop cancelled");
+            },
+
+        }
+
+        Ok(())
+    }
+
+    async fn heartbeat_loop(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(3));
+        let mut consecutive_errors = 0;
+
+        loop {
+            interval.tick().await;
+            match self.heartbeat().await {
+                Ok(_) => {
+                    info!("Heartbeat sent successfully");
+                    consecutive_errors = 0;
+                }
+                Err(e) => {
+                    warn!("Failed to send heartbeat: {:?}", e);
+                    consecutive_errors += 1;
+
+                    if consecutive_errors >= 3 {
+                        error!("5 consecutive heartbeat failures, initiating shutdown...");
+                        self.shutdown_send.send(1).unwrap();
+                    }
+                }
+            }
         }
     }
 

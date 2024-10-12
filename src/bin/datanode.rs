@@ -1,28 +1,37 @@
-use tokio::task;
-use tokio::time::{interval, Duration};
+use std::env;
 
 use cuddlyfs::datanode::Datanode;
+use log::info;
+use tokio::sync::mpsc;
+use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let datanode = Datanode::new();
+    env::set_var("RUST_LOG", "info");
+    env_logger::init();
 
-    let datanode_clone = datanode.clone();
+    let (shutdown_send, mut shutdown_recv) = mpsc::unbounded_channel::<i8>();
+    let cancel_token: CancellationToken = CancellationToken::new();
+    let datanode: Datanode = Datanode::new(cancel_token.clone(), shutdown_send);
 
-    let handle = task::spawn(async move {
-        let mut interval = interval(Duration::from_secs(3));
-        loop {
-            interval.tick().await;
-            match datanode_clone.heartbeat().await {
-                Ok(_) => println!("Heartbeat sent successfully"),
-                Err(e) => eprintln!("Failed to send heartbeat: {:?}", e),
-            }
-        }
+    let running_datanode_handle = tokio::spawn(async move {
+        let _ = datanode.run().await;
     });
 
-    print!("Main thread is free");
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {
+            info!("Ctrl-C received, shutting down...");
+        },
+        _ = shutdown_recv.recv() => {
+            info!("Received shutdown signal");
+        },
+    }
 
-    handle.await.unwrap();
+    cancel_token.cancel();
+
+    let _ = running_datanode_handle.await;
+
+    info!("Datanode shut down successfully");
 
     Ok(())
 }
