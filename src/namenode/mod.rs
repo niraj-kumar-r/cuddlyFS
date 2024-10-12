@@ -5,12 +5,19 @@ use crate::cuddlyproto::{
     nnha_status_heartbeat_proto, HeartbeatRequest, HeartbeatResponse, NnhaStatusHeartbeatProto,
     StatusCode, StatusEnum,
 };
+use tokio_util::sync::CancellationToken;
 use tonic::{transport::Server, Request, Response, Status};
 
 #[derive(Debug, Default, Clone)]
-pub struct Namenode {}
+pub struct Namenode {
+    cancel_token: CancellationToken,
+}
 
 impl Namenode {
+    pub fn new(cancel_token: CancellationToken) -> Self {
+        Self { cancel_token }
+    }
+
     pub async fn run(&self, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
         Server::builder()
             .add_service(HeartbeatServiceServer::new(Namenode::clone(&self)))
