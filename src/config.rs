@@ -55,7 +55,7 @@ impl Default for AppConfig {
 impl Default for DatanodeConfig {
     fn default() -> Self {
         Self {
-            namenode_rpc_address: "http://localhost:50051".into(),
+            namenode_rpc_address: "http://[::1]:50051".into(),
         }
     }
 }
@@ -63,7 +63,20 @@ impl Default for DatanodeConfig {
 impl Default for NamenodeConfig {
     fn default() -> Self {
         Self {
-            bind_address: "http://localhost:50051".into(),
+            bind_address: "[::1]:50051".into(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config() {
+        let config = AppConfig::default();
+        assert_eq!(config.debug, false);
+        assert_eq!(config.namenode.bind_address, "[::1]:50051");
+        assert_eq!(config.datanode.namenode_rpc_address, "http://[::1]:50051");
     }
 }
