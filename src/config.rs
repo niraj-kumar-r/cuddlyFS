@@ -1,6 +1,11 @@
 use config::{Config, ConfigError, Environment, File};
+use lazy_static::lazy_static;
 use serde::Deserialize;
 use std::env;
+
+lazy_static! {
+    pub static ref APP_CONFIG: AppConfig = AppConfig::new().unwrap();
+}
 
 #[derive(Debug, Clone, Deserialize)]
 #[allow(unused)]

@@ -18,6 +18,8 @@ services:
             - 50051:50051
         networks:
             - cuddlyfs_network
+        environment:
+            - RUN_MODE=docker
 
     datanode1:
         build:
@@ -30,6 +32,8 @@ services:
             - cuddlyfs_network
         depends_on:
             - namenode
+        environment:
+            - RUN_MODE=docker
 
     datanode2:
         build:
@@ -42,6 +46,8 @@ services:
             - cuddlyfs_network
         depends_on:
             - namenode
+        environment:
+            - RUN_MODE=docker
 
     datanode3:
         build:
@@ -54,6 +60,8 @@ services:
             - cuddlyfs_network
         depends_on:
             - namenode
+        environment:
+            - RUN_MODE=docker
 
 networks:
     cuddlyfs_network:
