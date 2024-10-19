@@ -1,7 +1,4 @@
-use crate::{
-    config::{DatanodeConfig, APP_CONFIG},
-    cuddlyproto,
-};
+use crate::{config::APP_CONFIG, cuddlyproto};
 
 use chrono::Utc;
 use local_ip_address::local_ip;
