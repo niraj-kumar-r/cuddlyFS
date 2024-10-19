@@ -27,5 +27,5 @@ message NNHAStatusHeartbeatProto {
         OBSERVER = 2;
     }
     State state = 1;
-    uint64 txid = 2;
+    string txid = 2;
 }

@@ -1,12 +1,20 @@
-use log::info;
+use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
+use super::namenode_data_registry::DataRegistry;
 use crate::cuddlyproto::{
-    heartbeat_service_server::HeartbeatService, nnha_status_heartbeat_proto, HeartbeatRequest,
-    HeartbeatResponse, NnhaStatusHeartbeatProto, StatusCode, StatusEnum,
+    heartbeat_service_server::HeartbeatService, HeartbeatRequest, HeartbeatResponse,
 };
 
-pub struct NamenodeHeartbeatService {}
+pub struct NamenodeHeartbeatService {
+    data_registry: Arc<DataRegistry>,
+}
+
+impl NamenodeHeartbeatService {
+    pub fn new(data_registry: Arc<DataRegistry>) -> Self {
+        Self { data_registry }
+    }
+}
 
 #[tonic::async_trait]
 impl HeartbeatService for NamenodeHeartbeatService {
@@ -14,22 +22,11 @@ impl HeartbeatService for NamenodeHeartbeatService {
         &self,
         request: Request<HeartbeatRequest>,
     ) -> Result<Response<HeartbeatResponse>, Status> {
-        info!(
-            "Got a request from: {:?}",
-            request.into_inner().registration.unwrap().datanode_id
-        );
+        let request_data = request.into_inner();
 
-        let response = HeartbeatResponse {
-            status: Some(StatusCode {
-                success: true,
-                code: StatusEnum::Ok as i32,
-                message: "Ok".to_string(),
-            }),
-            ha_status: Some(NnhaStatusHeartbeatProto {
-                state: nnha_status_heartbeat_proto::State::Active as i32,
-                txid: 0,
-            }),
-        };
+        let response = self
+            .data_registry
+            .handle_heartbeat(request_data.registration.unwrap(), request_data.reports);
 
         Ok(Response::new(response))
     }

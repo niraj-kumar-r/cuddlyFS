@@ -23,7 +23,10 @@ impl Datanode {
         Datanode {
             datanode_id: cuddlyproto::DatanodeIdProto {
                 ip_addr: local_ip().unwrap().to_string(),
-                host_name: "fedoraDatanode.0.0.1".to_string(),
+                host_name: hostname::get()
+                    .unwrap_or_else(|_| "unknown".into())
+                    .to_string_lossy()
+                    .to_string(),
                 datanode_uuid: Uuid::new_v4().to_string(),
                 xfer_port: 50010,
                 info_port: 50075,
@@ -83,18 +86,7 @@ impl Datanode {
     ) -> Result<tonic::Response<cuddlyproto::HeartbeatResponse>, Box<dyn std::error::Error>> {
         let req = tonic::Request::new(cuddlyproto::HeartbeatRequest {
             registration: Some(cuddlyproto::DatanodeRegistrationProto {
-                datanode_id: Some(cuddlyproto::DatanodeIdProto {
-                    ip_addr: local_ip().unwrap().to_string(),
-                    host_name: hostname::get()
-                        .unwrap_or_else(|_| "unknown".into())
-                        .to_string_lossy()
-                        .to_string(),
-                    datanode_uuid: Uuid::new_v4().to_string(),
-                    xfer_port: 50010,
-                    info_port: 50075,
-                    ipc_port: 50020,
-                    info_secure_port: 50070,
-                }),
+                datanode_id: Some(self.datanode_id.clone()),
                 storage_info: Some(cuddlyproto::StorageInfoProto {
                     layout_version: 1,
                     namespace_id: 1,
