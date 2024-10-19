@@ -1,4 +1,4 @@
-use crate::cuddlyproto;
+use crate::{config::DatanodeConfig, cuddlyproto};
 
 use chrono::Utc;
 use local_ip_address::local_ip;
@@ -13,10 +13,13 @@ pub struct Datanode {
     pub datanode_id: cuddlyproto::DatanodeIdProto,
     cancel_token: CancellationToken,
     shutdown_send: mpsc::UnboundedSender<i8>,
+    datanode_config: DatanodeConfig,
 }
 
 impl Datanode {
     pub fn new(cancel_token: CancellationToken, shutdown_send: mpsc::UnboundedSender<i8>) -> Self {
+        let app_config = crate::config::AppConfig::new().unwrap();
+
         Datanode {
             datanode_id: cuddlyproto::DatanodeIdProto {
                 ip_addr: local_ip().unwrap().to_string(),
@@ -29,6 +32,7 @@ impl Datanode {
             },
             cancel_token,
             shutdown_send,
+            datanode_config: app_config.datanode,
         }
     }
 
@@ -115,7 +119,8 @@ impl Datanode {
             reports: vec![],
         });
 
-        let mut client = Self::get_heartbeat_client("http://[::1]:50051".to_string()).await?;
+        let mut client =
+            Self::get_heartbeat_client(self.datanode_config.namenode_rpc_address.clone()).await?;
 
         let response = client.heartbeat(req).await.unwrap();
         Ok(response)

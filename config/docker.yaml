@@ -1,0 +1,4 @@
+debug: true
+
+datanode:
+    namenode_rpc_address: "cuddlyfs_network:5051"
