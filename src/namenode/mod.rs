@@ -30,7 +30,7 @@ impl Namenode {
             info!("Namenode Run cancelled");
         },
         _ = Server::builder()
-        .add_service(HeartbeatServiceServer::new(Namenode::clone(&self)))
+        .add_service(HeartbeatServiceServer::new(NamenodeHeartbeatService {}))
         .serve(addr) => {}
         }
 
@@ -38,15 +38,23 @@ impl Namenode {
     }
 }
 
+pub struct NamenodeHeartbeatService {}
+
 #[tonic::async_trait]
-impl HeartbeatService for Namenode {
+impl HeartbeatService for NamenodeHeartbeatService {
     async fn heartbeat(
         &self,
         request: Request<HeartbeatRequest>,
     ) -> Result<Response<HeartbeatResponse>, Status> {
         info!(
             "Got a request from: {:?}",
-            request.into_inner().registration.unwrap().datanode_id
+            request
+                .into_inner()
+                .registration
+                .unwrap()
+                .datanode_id
+                .unwrap()
+                .datanode_uuid
         );
 
         let response = HeartbeatResponse {
