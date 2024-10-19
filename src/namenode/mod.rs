@@ -1,66 +1,47 @@
-use std::net::SocketAddr;
-
-use crate::cuddlyproto::{
-    heartbeat_service_server::{HeartbeatService, HeartbeatServiceServer},
-    nnha_status_heartbeat_proto, HeartbeatRequest, HeartbeatResponse, NnhaStatusHeartbeatProto,
-    StatusCode, StatusEnum,
-};
 use log::info;
-use tokio::sync::mpsc::{self, UnboundedSender};
+use namenode_data_registry::DataRegistry;
+use namenode_heartbeat_service::NamenodeHeartbeatService;
+use std::{net::SocketAddr, sync::Arc};
+use tokio::sync::mpsc::UnboundedSender;
 use tokio_util::sync::CancellationToken;
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::transport::Server;
 
-#[derive(Debug, Clone)]
+use crate::cuddlyproto::heartbeat_service_server::HeartbeatServiceServer;
+
+mod namenode_data_registry;
+mod namenode_heartbeat_service;
+
+#[derive(Debug)]
 pub struct Namenode {
+    data_registry: Arc<DataRegistry>,
     cancel_token: CancellationToken,
-    shutdown_send: mpsc::UnboundedSender<i8>,
+    shutdown_send: UnboundedSender<i8>,
 }
 
 impl Namenode {
     pub fn new(cancel_token: CancellationToken, shutdown_send: UnboundedSender<i8>) -> Self {
         Self {
+            data_registry: Arc::new(DataRegistry::new()),
             cancel_token,
             shutdown_send,
         }
     }
 
     pub async fn run(&self, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
+        let rpc_service = Server::builder()
+            .add_service(HeartbeatServiceServer::new(NamenodeHeartbeatService::new(
+                Arc::clone(&self.data_registry),
+            )))
+            .serve(addr);
+
         tokio::select! {
-        _ = self.cancel_token.cancelled() => {
+            _ = rpc_service => {},
+
+            _ = self.cancel_token.cancelled() => {
             info!("Namenode Run cancelled");
-        },
-        _ = Server::builder()
-        .add_service(HeartbeatServiceServer::new(Namenode::clone(&self)))
-        .serve(addr) => {}
+            }
         }
 
         Ok(())
-    }
-}
-
-#[tonic::async_trait]
-impl HeartbeatService for Namenode {
-    async fn heartbeat(
-        &self,
-        request: Request<HeartbeatRequest>,
-    ) -> Result<Response<HeartbeatResponse>, Status> {
-        info!(
-            "Got a request from: {:?}",
-            request.into_inner().registration.unwrap().datanode_id
-        );
-
-        let response = HeartbeatResponse {
-            status: Some(StatusCode {
-                success: true,
-                code: StatusEnum::Ok as i32,
-                message: "Ok".to_string(),
-            }),
-            ha_status: Some(NnhaStatusHeartbeatProto {
-                state: nnha_status_heartbeat_proto::State::Active as i32,
-                txid: 0,
-            }),
-        };
-
-        Ok(Response::new(response))
     }
 }
