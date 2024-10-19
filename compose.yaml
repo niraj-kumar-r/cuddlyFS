@@ -10,6 +10,7 @@ services:
         networks:
             - cuddlyfs_network
         environment:
+            # corresponds to config/docker.yaml
             - RUN_MODE=docker
 
     datanode1:

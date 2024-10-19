@@ -44,7 +44,10 @@ impl HeartbeatService for Namenode {
         &self,
         request: Request<HeartbeatRequest>,
     ) -> Result<Response<HeartbeatResponse>, Status> {
-        println!("Got a request: {:?}", request);
+        info!(
+            "Got a request from: {:?}",
+            request.into_inner().registration.unwrap().datanode_id
+        );
 
         let response = HeartbeatResponse {
             status: Some(StatusCode {
