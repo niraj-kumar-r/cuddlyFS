@@ -1,19 +1,18 @@
-use std::net::SocketAddr;
-
-use crate::cuddlyproto::{
-    heartbeat_service_server::{HeartbeatService, HeartbeatServiceServer},
-    nnha_status_heartbeat_proto, HeartbeatRequest, HeartbeatResponse, NnhaStatusHeartbeatProto,
-    StatusCode, StatusEnum,
-};
 use log::info;
-use tokio::sync::mpsc::{self, UnboundedSender};
+use namenode_heartbeat_service::NamenodeHeartbeatService;
+use std::net::SocketAddr;
+use tokio::sync::mpsc::UnboundedSender;
 use tokio_util::sync::CancellationToken;
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::transport::Server;
 
-#[derive(Debug, Clone)]
+use crate::cuddlyproto::heartbeat_service_server::HeartbeatServiceServer;
+
+mod namenode_heartbeat_service;
+
+#[derive(Debug)]
 pub struct Namenode {
     cancel_token: CancellationToken,
-    shutdown_send: mpsc::UnboundedSender<i8>,
+    shutdown_send: UnboundedSender<i8>,
 }
 
 impl Namenode {
@@ -25,50 +24,18 @@ impl Namenode {
     }
 
     pub async fn run(&self, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
+        let rpc_service = Server::builder()
+            .add_service(HeartbeatServiceServer::new(NamenodeHeartbeatService {}))
+            .serve(addr);
+
         tokio::select! {
-        _ = self.cancel_token.cancelled() => {
+            _ = rpc_service => {},
+
+            _ = self.cancel_token.cancelled() => {
             info!("Namenode Run cancelled");
-        },
-        _ = Server::builder()
-        .add_service(HeartbeatServiceServer::new(NamenodeHeartbeatService {}))
-        .serve(addr) => {}
+            }
         }
 
         Ok(())
-    }
-}
-
-pub struct NamenodeHeartbeatService {}
-
-#[tonic::async_trait]
-impl HeartbeatService for NamenodeHeartbeatService {
-    async fn heartbeat(
-        &self,
-        request: Request<HeartbeatRequest>,
-    ) -> Result<Response<HeartbeatResponse>, Status> {
-        info!(
-            "Got a request from: {:?}",
-            request
-                .into_inner()
-                .registration
-                .unwrap()
-                .datanode_id
-                .unwrap()
-                .datanode_uuid
-        );
-
-        let response = HeartbeatResponse {
-            status: Some(StatusCode {
-                success: true,
-                code: StatusEnum::Ok as i32,
-                message: "Ok".to_string(),
-            }),
-            ha_status: Some(NnhaStatusHeartbeatProto {
-                state: nnha_status_heartbeat_proto::State::Active as i32,
-                txid: 0,
-            }),
-        };
-
-        Ok(Response::new(response))
     }
 }
