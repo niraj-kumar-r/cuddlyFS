@@ -8,13 +8,56 @@
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
 services:
-  server:
-    build:
-      context: .
-      target: final
-    ports:
-      - 50051:50051
+    namenode:
+        build:
+            context: .
+            dockerfile: Dockerfile.namenode
+            target: final
+        container_name: cuddlyfs_namenode
+        ports:
+            - 50051:50051
+        networks:
+            - cuddlyfs_network
 
+    datanode1:
+        build:
+            context: .
+            dockerfile: Dockerfile.datanode
+        container_name: cuddlyfs_datanode1
+        ports:
+            - "50052:50052"
+        networks:
+            - cuddlyfs_network
+        depends_on:
+            - namenode
+
+    datanode2:
+        build:
+            context: .
+            dockerfile: Dockerfile.datanode
+        container_name: cuddlyfs_datanode2
+        ports:
+            - "50053:50052"
+        networks:
+            - cuddlyfs_network
+        depends_on:
+            - namenode
+
+    datanode3:
+        build:
+            context: .
+            dockerfile: Dockerfile.datanode
+        container_name: cuddlyfs_datanode3
+        ports:
+            - "50054:50052"
+        networks:
+            - cuddlyfs_network
+        depends_on:
+            - namenode
+
+networks:
+    cuddlyfs_network:
+        driver: bridge
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to
 # start the database before your application. The `db-data` volume persists the
