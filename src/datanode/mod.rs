@@ -1,4 +1,7 @@
-use crate::{config::APP_CONFIG, cuddlyproto};
+use crate::{
+    config::APP_CONFIG,
+    cuddlyproto::{self, heartbeat_service_client::HeartbeatServiceClient},
+};
 
 use chrono::Utc;
 use local_ip_address::local_ip;
@@ -70,12 +73,8 @@ impl Datanode {
 
     async fn get_heartbeat_client(
         uri: String,
-    ) -> Result<
-        cuddlyproto::heartbeat_service_client::HeartbeatServiceClient<Channel>,
-        Box<dyn std::error::Error>,
-    > {
-        let client =
-            cuddlyproto::heartbeat_service_client::HeartbeatServiceClient::connect(uri).await?;
+    ) -> Result<HeartbeatServiceClient<Channel>, Box<dyn std::error::Error>> {
+        let client = HeartbeatServiceClient::connect(uri).await?;
         Ok(client)
     }
 
@@ -86,7 +85,10 @@ impl Datanode {
             registration: Some(cuddlyproto::DatanodeRegistrationProto {
                 datanode_id: Some(cuddlyproto::DatanodeIdProto {
                     ip_addr: local_ip().unwrap().to_string(),
-                    host_name: "fedoraDatanode.0.0.1".to_string(),
+                    host_name: hostname::get()
+                        .unwrap_or_else(|_| "unknown".into())
+                        .to_string_lossy()
+                        .to_string(),
                     datanode_uuid: Uuid::new_v4().to_string(),
                     xfer_port: 50010,
                     info_port: 50075,

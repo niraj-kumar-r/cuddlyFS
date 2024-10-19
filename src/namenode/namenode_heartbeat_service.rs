@@ -16,13 +16,7 @@ impl HeartbeatService for NamenodeHeartbeatService {
     ) -> Result<Response<HeartbeatResponse>, Status> {
         info!(
             "Got a request from: {:?}",
-            request
-                .into_inner()
-                .registration
-                .unwrap()
-                .datanode_id
-                .unwrap()
-                .datanode_uuid
+            request.into_inner().registration.unwrap().datanode_id
         );
 
         let response = HeartbeatResponse {
