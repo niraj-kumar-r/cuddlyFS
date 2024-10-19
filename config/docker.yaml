@@ -1,4 +1,7 @@
 debug: true
 
+namenode:
+    bind_address: "[::]:50051"
+
 datanode:
-    namenode_rpc_address: "cuddlyfs_network:5051"
+    namenode_rpc_address: "http://namenode:50051"

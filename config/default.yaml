@@ -1,4 +1,7 @@
 debug: true
 
+namenode:
+    bind_address: "[::1]:50051"
+
 datanode:
     namenode_rpc_address: "http://[::1]:50051"
