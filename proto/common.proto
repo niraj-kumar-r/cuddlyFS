@@ -33,7 +33,7 @@ message StorageInfoProto {
 message BlockKeyProto {
   uint32 keyId = 1;      // Key identifier
   uint64 expiryDate = 2; // Expiry time in milliseconds
-  optional bytes keyBytes = 3;    // Key secret
+  bytes keyBytes = 3;    // Key secret
 }
 
 ///Current key and set of block keys at the namenode.

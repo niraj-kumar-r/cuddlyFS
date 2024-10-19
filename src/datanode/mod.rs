@@ -106,7 +106,7 @@ impl Datanode {
                     current_key: Some(cuddlyproto::BlockKeyProto {
                         key_id: 1,
                         expiry_date: 3000,
-                        key_bytes: Some("my_secret_key".into()),
+                        key_bytes: "my_secret_key".into(),
                     }),
                     all_keys: vec![],
                 }),
