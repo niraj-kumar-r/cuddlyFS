@@ -1,6 +1,6 @@
 use std::{env, net::SocketAddr};
 
-use cuddlyfs::{config::APP_CONFIG, namenode::Namenode};
+use cuddlyfs::{namenode::Namenode, APP_CONFIG};
 use log::info;
 use tokio::{signal, sync::mpsc};
 use tokio_util::sync::CancellationToken;
