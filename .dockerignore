@@ -10,6 +10,7 @@
 **/.env
 **/.git
 **/.gitignore
+**/.github
 **/.project
 **/.settings
 **/.toolstarget
