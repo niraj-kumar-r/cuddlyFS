@@ -1,6 +1,6 @@
 use std::{env, net::SocketAddr};
 
-use cuddlyfs::namenode::Namenode;
+use cuddlyfs::{config::APP_CONFIG, namenode::Namenode};
 use log::info;
 use tokio::{signal, sync::mpsc};
 use tokio_util::sync::CancellationToken;
@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env::set_var("RUST_LOG", "info");
     env_logger::init();
 
-    let addr: SocketAddr = "[::1]:50051".parse().unwrap();
+    let addr: SocketAddr = APP_CONFIG.namenode.bind_address.parse().unwrap();
     let (shutdown_send, mut shutdown_recv) = mpsc::unbounded_channel::<i8>();
     let cancel_token: CancellationToken = CancellationToken::new();
     let namenode: Namenode = Namenode::new(cancel_token.clone(), shutdown_send);

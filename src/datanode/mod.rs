@@ -1,4 +1,4 @@
-use crate::cuddlyproto;
+use crate::{config::APP_CONFIG, cuddlyproto};
 
 use chrono::Utc;
 use local_ip_address::local_ip;
@@ -115,7 +115,8 @@ impl Datanode {
             reports: vec![],
         });
 
-        let mut client = Self::get_heartbeat_client("http://[::1]:50051".to_string()).await?;
+        let mut client =
+            Self::get_heartbeat_client(APP_CONFIG.datanode.namenode_rpc_address.clone()).await?;
 
         let response = client.heartbeat(req).await.unwrap();
         Ok(response)
