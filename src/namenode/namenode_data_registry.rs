@@ -1,12 +1,15 @@
 use chrono::{DateTime, Utc};
 use log::info;
 use lru::LruCache;
+use tokio_util::sync::CancellationToken;
 
 use crate::cuddlyproto;
 use std::{num::NonZero, sync::Mutex};
 
 // Create a const for cache size
 const CACHE_SIZE: usize = 100;
+const HEARTBEAT_TIMEOUT: i64 = 3 * 200;
+const HEARTBEAT_RECHECK_INTERVAL: i64 = 20;
 
 /**
  * FSNamesystem is a container of both transient
@@ -41,6 +44,7 @@ const CACHE_SIZE: usize = 100;
 pub(super) struct DataRegistry {
     start_time: DateTime<Utc>,
     heartbeat_cache: Mutex<LruCache<String, DateTime<Utc>>>,
+    cancel_token: CancellationToken,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
     // block_to_machines: HashMap<Block, MachineList>,
@@ -53,11 +57,14 @@ pub(super) struct DataRegistry {
 }
 
 impl DataRegistry {
-    pub(super) fn new() -> Self {
-        Self {
+    pub(super) fn new(cancel_token: CancellationToken) -> Self {
+        let data_registry = Self {
             start_time: Utc::now(),
             heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
-        }
+            cancel_token,
+        };
+
+        data_registry
     }
 
     pub fn handle_heartbeat(
@@ -102,7 +109,7 @@ impl DataRegistry {
 
             return response;
         } else {
-            info!("Datanode registration did not contain a UUID");
+            info!("Datanode registration failed, request did not contain a UUID");
 
             let response = cuddlyproto::HeartbeatResponse {
                 status: Some(cuddlyproto::StatusCode {
@@ -117,6 +124,26 @@ impl DataRegistry {
             };
 
             return response;
+        }
+    }
+
+    fn remove_invalid_datanodes(&self) {
+        let mut cache = self.heartbeat_cache.lock().unwrap();
+        let now = Utc::now();
+        let mut to_remove = Vec::new();
+
+        for (uuid, instant) in cache.iter() {
+            if now.signed_duration_since(*instant).num_seconds() > HEARTBEAT_TIMEOUT {
+                to_remove.push(uuid.clone());
+            }
+        }
+
+        for uuid in to_remove {
+            cache.pop(&uuid);
+            info!(
+                "Removed Datanode with uuid (did not receive heartbeat): {}",
+                uuid
+            );
         }
     }
 }

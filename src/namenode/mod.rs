@@ -21,7 +21,7 @@ pub struct Namenode {
 impl Namenode {
     pub fn new(cancel_token: CancellationToken, shutdown_send: UnboundedSender<i8>) -> Self {
         Self {
-            data_registry: Arc::new(DataRegistry::new()),
+            data_registry: Arc::new(DataRegistry::new(cancel_token.clone())),
             cancel_token,
             shutdown_send,
         }
