@@ -1,7 +1,12 @@
+use chrono::{DateTime, Utc};
 use log::info;
+use lru::LruCache;
 
 use crate::cuddlyproto;
-use std::{collections::HashMap, sync::Mutex, time::Instant};
+use std::{num::NonZero, sync::Mutex};
+
+// Create a const for cache size
+const CACHE_SIZE: usize = 100;
 
 /**
  * FSNamesystem is a container of both transient
@@ -34,15 +39,24 @@ use std::{collections::HashMap, sync::Mutex, time::Instant};
 #[derive(Debug)]
 #[allow(dead_code)]
 pub(super) struct DataRegistry {
-    start_time: Instant,
-    heartbeats: Mutex<HashMap<String, Instant>>,
+    start_time: DateTime<Utc>,
+    heartbeat_cache: Mutex<LruCache<String, DateTime<Utc>>>,
+    // fsname_to_blocks: HashMap<FsName, BlockList>,
+    // valid_blocks: HashSet<Block>,
+    // block_to_machines: HashMap<Block, MachineList>,
+    // machine_to_blocks: HashMap<Machine, BlockList>,
+    // block_manager: BlockManager,
+    // datanode_manager: DatanodeManager,
+    // lease_manager: LeaseManager,
+    // fs_directory: FSDirectory,
+    // edit_log: FSEditLog,
 }
 
 impl DataRegistry {
     pub(super) fn new() -> Self {
         Self {
-            start_time: Instant::now(),
-            heartbeats: Mutex::new(HashMap::new()),
+            start_time: Utc::now(),
+            heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
         }
     }
 
@@ -58,10 +72,10 @@ impl DataRegistry {
 
         if let Some(uuid) = &datanode_uuid {
             let r = self
-                .heartbeats
+                .heartbeat_cache
                 .lock()
                 .unwrap()
-                .insert(uuid.clone(), Instant::now());
+                .put(uuid.clone(), Utc::now());
 
             match r {
                 Some(previous_instant) => {
@@ -74,20 +88,35 @@ impl DataRegistry {
                     info!("New Datanode Connected with uuid: {}", uuid);
                 }
             }
+            let response = cuddlyproto::HeartbeatResponse {
+                status: Some(cuddlyproto::StatusCode {
+                    success: true,
+                    code: cuddlyproto::StatusEnum::Ok as i32,
+                    message: "Ok".to_string(),
+                }),
+                ha_status: Some(cuddlyproto::NnhaStatusHeartbeatProto {
+                    state: cuddlyproto::nnha_status_heartbeat_proto::State::Active as i32,
+                    txid: uuid::Uuid::new_v4().to_string(),
+                }),
+            };
+
+            return response;
+        } else {
+            info!("Datanode registration did not contain a UUID");
+
+            let response = cuddlyproto::HeartbeatResponse {
+                status: Some(cuddlyproto::StatusCode {
+                    success: false,
+                    code: cuddlyproto::StatusEnum::EInval as i32,
+                    message: "Request doesn't have UUID of node".to_string(),
+                }),
+                ha_status: Some(cuddlyproto::NnhaStatusHeartbeatProto {
+                    state: cuddlyproto::nnha_status_heartbeat_proto::State::Active as i32,
+                    txid: uuid::Uuid::new_v4().to_string(),
+                }),
+            };
+
+            return response;
         }
-
-        let response = cuddlyproto::HeartbeatResponse {
-            status: Some(cuddlyproto::StatusCode {
-                success: true,
-                code: cuddlyproto::StatusEnum::Ok as i32,
-                message: "Ok".to_string(),
-            }),
-            ha_status: Some(cuddlyproto::NnhaStatusHeartbeatProto {
-                state: cuddlyproto::nnha_status_heartbeat_proto::State::Active as i32,
-                txid: uuid::Uuid::new_v4().to_string(),
-            }),
-        };
-
-        response
     }
 }
