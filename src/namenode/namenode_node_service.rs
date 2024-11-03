@@ -3,8 +3,8 @@ use std::sync::Arc;
 use tonic::{Request, Response};
 
 use crate::cuddlyproto::{
-    node_service_server::NodeService, Block, BlockReceivedRequest, BlockReceivedResponse,
-    StatusCode, StatusEnum,
+    node_service_server::NodeService, BlockReceivedRequest, BlockReceivedResponse, StatusCode,
+    StatusEnum,
 };
 
 use super::namenode_data_registry::DataRegistry;
@@ -26,15 +26,18 @@ impl NodeService for NamenodeNodeService {
         request: Request<BlockReceivedRequest>,
     ) -> Result<Response<BlockReceivedResponse>, tonic::Status> {
         let request = request.into_inner();
-        let BlockReceivedRequest { address, block } = request;
-        // let block: Block = block.into();
+        let address = request.address;
+        let block = request.block.unwrap_or_default();
 
-        Ok(Response::new(BlockReceivedResponse {
-            status: Some(StatusCode {
-                success: true,
-                code: StatusEnum::Ok as i32,
-                message: "Block received".to_string(),
-            }),
-        }))
+        match self.data_registry.block_received(&address, &block) {
+            Ok(()) => Ok(Response::new(BlockReceivedResponse {
+                status: Some(StatusCode {
+                    success: true,
+                    code: StatusEnum::Ok as i32,
+                    message: "Block received".to_string(),
+                }),
+            })),
+            Err(_status) => Err(tonic::Status::invalid_argument("Invalid argument")),
+        }
     }
 }

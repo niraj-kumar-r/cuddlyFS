@@ -8,8 +8,7 @@ use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 
 use crate::cuddlyproto::{
-    heartbeat_service_server::HeartbeatServiceServer,
-    node_service_server::{NodeService, NodeServiceServer},
+    heartbeat_service_server::HeartbeatServiceServer, node_service_server::NodeServiceServer,
 };
 
 mod namenode_data_registry;

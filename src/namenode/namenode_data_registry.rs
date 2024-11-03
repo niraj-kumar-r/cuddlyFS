@@ -5,7 +5,13 @@ use tokio::time;
 use tokio_util::sync::CancellationToken;
 
 use crate::cuddlyproto;
-use std::{num::NonZero, sync::Mutex};
+use std::{
+    collections::{HashMap, HashSet},
+    num::NonZero,
+    sync::Mutex,
+};
+
+use self::cuddlyproto::{Block, StatusEnum};
 
 // Create a const for cache size
 const CACHE_SIZE: usize = 100;
@@ -46,10 +52,10 @@ pub(super) struct DataRegistry {
     start_time: DateTime<Utc>,
     heartbeat_cache: Mutex<LruCache<String, DateTime<Utc>>>,
     cancel_token: CancellationToken,
+    block_to_datanodes: Mutex<HashMap<Block, HashSet<String>>>,
+    datanode_to_blocks: Mutex<HashMap<String, HashSet<Block>>>,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
-    // block_to_machines: HashMap<Block, MachineList>,
-    // machine_to_blocks: HashMap<Machine, BlockList>,
     // block_manager: BlockManager,
     // datanode_manager: DatanodeManager,
     // lease_manager: LeaseManager,
@@ -62,6 +68,8 @@ impl DataRegistry {
         let data_registry = Self {
             start_time: Utc::now(),
             heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
+            block_to_datanodes: Mutex::new(HashMap::new()),
+            datanode_to_blocks: Mutex::new(HashMap::new()),
             cancel_token,
         };
 
@@ -168,5 +176,15 @@ impl DataRegistry {
             heartbeat_tick.tick().await;
             self.remove_invalid_datanodes();
         }
+    }
+
+    pub(crate) fn block_received(
+        &self,
+        address: &str,
+        block: &cuddlyproto::Block,
+    ) -> Result<(), StatusEnum> {
+        info!("Block received from address: {}", address);
+
+        Ok(())
     }
 }
