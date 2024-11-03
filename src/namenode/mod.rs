@@ -21,7 +21,7 @@ pub struct Namenode {
 impl Namenode {
     pub fn new(cancel_token: CancellationToken, shutdown_send: UnboundedSender<i8>) -> Self {
         Self {
-            data_registry: Arc::new(DataRegistry::new()),
+            data_registry: Arc::new(DataRegistry::new(cancel_token.clone())),
             cancel_token,
             shutdown_send,
         }
@@ -36,6 +36,10 @@ impl Namenode {
 
         tokio::select! {
             _ = rpc_service => {},
+
+            _ = self.data_registry.run() => {
+                info!("DataRegistry Run finished");
+            }
 
             _ = self.cancel_token.cancelled() => {
             info!("Namenode Run cancelled");

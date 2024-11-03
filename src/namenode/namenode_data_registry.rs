@@ -1,7 +1,16 @@
+use chrono::{DateTime, Utc};
 use log::info;
+use lru::LruCache;
+use tokio::time;
+use tokio_util::sync::CancellationToken;
 
 use crate::cuddlyproto;
-use std::{collections::HashMap, sync::Mutex, time::Instant};
+use std::{num::NonZero, sync::Mutex};
+
+// Create a const for cache size
+const CACHE_SIZE: usize = 100;
+const HEARTBEAT_TIMEOUT: i64 = 3 * 200;
+const HEARTBEAT_RECHECK_INTERVAL: u64 = 20;
 
 /**
  * FSNamesystem is a container of both transient
@@ -34,16 +43,42 @@ use std::{collections::HashMap, sync::Mutex, time::Instant};
 #[derive(Debug)]
 #[allow(dead_code)]
 pub(super) struct DataRegistry {
-    start_time: Instant,
-    heartbeats: Mutex<HashMap<String, Instant>>,
+    start_time: DateTime<Utc>,
+    heartbeat_cache: Mutex<LruCache<String, DateTime<Utc>>>,
+    cancel_token: CancellationToken,
+    // fsname_to_blocks: HashMap<FsName, BlockList>,
+    // valid_blocks: HashSet<Block>,
+    // block_to_machines: HashMap<Block, MachineList>,
+    // machine_to_blocks: HashMap<Machine, BlockList>,
+    // block_manager: BlockManager,
+    // datanode_manager: DatanodeManager,
+    // lease_manager: LeaseManager,
+    // fs_directory: FSDirectory,
+    // edit_log: FSEditLog,
 }
 
 impl DataRegistry {
-    pub(super) fn new() -> Self {
-        Self {
-            start_time: Instant::now(),
-            heartbeats: Mutex::new(HashMap::new()),
+    pub(super) fn new(cancel_token: CancellationToken) -> Self {
+        let data_registry = Self {
+            start_time: Utc::now(),
+            heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
+            cancel_token,
+        };
+
+        data_registry
+    }
+
+    pub(crate) async fn run(&self) {
+        tokio::select! {
+            _ = self.cancel_token.cancelled() => {
+                info!("DataRegistry cancelled");
+            }
+            _ = self.do_heartbeat_monitoring() => {
+                info!("Heartbeat monitor finished");
+            }
         }
+
+        info!("DataRegistry run finished");
     }
 
     pub fn handle_heartbeat(
@@ -58,10 +93,10 @@ impl DataRegistry {
 
         if let Some(uuid) = &datanode_uuid {
             let r = self
-                .heartbeats
+                .heartbeat_cache
                 .lock()
                 .unwrap()
-                .insert(uuid.clone(), Instant::now());
+                .put(uuid.clone(), Utc::now());
 
             match r {
                 Some(previous_instant) => {
@@ -74,20 +109,64 @@ impl DataRegistry {
                     info!("New Datanode Connected with uuid: {}", uuid);
                 }
             }
+            let response = cuddlyproto::HeartbeatResponse {
+                status: Some(cuddlyproto::StatusCode {
+                    success: true,
+                    code: cuddlyproto::StatusEnum::Ok as i32,
+                    message: "Ok".to_string(),
+                }),
+                ha_status: Some(cuddlyproto::NnhaStatusHeartbeatProto {
+                    state: cuddlyproto::nnha_status_heartbeat_proto::State::Active as i32,
+                    txid: uuid::Uuid::new_v4().to_string(),
+                }),
+            };
+
+            return response;
+        } else {
+            info!("Datanode registration failed, request did not contain a UUID");
+
+            let response = cuddlyproto::HeartbeatResponse {
+                status: Some(cuddlyproto::StatusCode {
+                    success: false,
+                    code: cuddlyproto::StatusEnum::EInval as i32,
+                    message: "Request doesn't have UUID of node".to_string(),
+                }),
+                ha_status: Some(cuddlyproto::NnhaStatusHeartbeatProto {
+                    state: cuddlyproto::nnha_status_heartbeat_proto::State::Active as i32,
+                    txid: uuid::Uuid::new_v4().to_string(),
+                }),
+            };
+
+            return response;
+        }
+    }
+
+    fn remove_invalid_datanodes(&self) {
+        let mut cache = self.heartbeat_cache.lock().unwrap();
+        let now = Utc::now();
+        let mut to_remove = Vec::new();
+
+        for (uuid, instant) in cache.iter() {
+            if now.signed_duration_since(*instant).num_seconds() > HEARTBEAT_TIMEOUT {
+                to_remove.push(uuid.clone());
+            }
         }
 
-        let response = cuddlyproto::HeartbeatResponse {
-            status: Some(cuddlyproto::StatusCode {
-                success: true,
-                code: cuddlyproto::StatusEnum::Ok as i32,
-                message: "Ok".to_string(),
-            }),
-            ha_status: Some(cuddlyproto::NnhaStatusHeartbeatProto {
-                state: cuddlyproto::nnha_status_heartbeat_proto::State::Active as i32,
-                txid: uuid::Uuid::new_v4().to_string(),
-            }),
-        };
+        for uuid in to_remove {
+            cache.pop(&uuid);
+            info!(
+                "Removed Datanode with uuid (did not receive heartbeat): {}",
+                uuid
+            );
+        }
+    }
 
-        response
+    async fn do_heartbeat_monitoring(&self) {
+        let mut heartbeat_tick =
+            time::interval(time::Duration::from_secs(HEARTBEAT_RECHECK_INTERVAL));
+        loop {
+            heartbeat_tick.tick().await;
+            self.remove_invalid_datanodes();
+        }
     }
 }
