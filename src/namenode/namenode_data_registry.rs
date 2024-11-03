@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use log::info;
 use lru::LruCache;
+use tokio::time;
 use tokio_util::sync::CancellationToken;
 
 use crate::cuddlyproto;
@@ -9,7 +10,7 @@ use std::{num::NonZero, sync::Mutex};
 // Create a const for cache size
 const CACHE_SIZE: usize = 100;
 const HEARTBEAT_TIMEOUT: i64 = 3 * 200;
-const HEARTBEAT_RECHECK_INTERVAL: i64 = 20;
+const HEARTBEAT_RECHECK_INTERVAL: u64 = 20;
 
 /**
  * FSNamesystem is a container of both transient
@@ -65,6 +66,19 @@ impl DataRegistry {
         };
 
         data_registry
+    }
+
+    pub(crate) async fn run(&self) {
+        tokio::select! {
+            _ = self.cancel_token.cancelled() => {
+                info!("DataRegistry cancelled");
+            }
+            _ = self.do_heartbeat_monitoring() => {
+                info!("Heartbeat monitor finished");
+            }
+        }
+
+        info!("DataRegistry run finished");
     }
 
     pub fn handle_heartbeat(
@@ -144,6 +158,15 @@ impl DataRegistry {
                 "Removed Datanode with uuid (did not receive heartbeat): {}",
                 uuid
             );
+        }
+    }
+
+    async fn do_heartbeat_monitoring(&self) {
+        let mut heartbeat_tick =
+            time::interval(time::Duration::from_secs(HEARTBEAT_RECHECK_INTERVAL));
+        loop {
+            heartbeat_tick.tick().await;
+            self.remove_invalid_datanodes();
         }
     }
 }

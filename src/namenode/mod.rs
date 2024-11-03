@@ -37,6 +37,10 @@ impl Namenode {
         tokio::select! {
             _ = rpc_service => {},
 
+            _ = self.data_registry.run() => {
+                info!("DataRegistry Run finished");
+            }
+
             _ = self.cancel_token.cancelled() => {
             info!("Namenode Run cancelled");
             }
