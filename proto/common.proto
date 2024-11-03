@@ -75,3 +75,8 @@ message StorageReportProto {
   uint64 nonDfsUsed = 7;
   string mount = 8;
 }
+
+message Block {
+  uint64 id = 1;
+  uint64 len = 2;
+}
