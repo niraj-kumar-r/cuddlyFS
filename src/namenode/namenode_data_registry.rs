@@ -1,7 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
     num::NonZero,
-    sync::Mutex,
+    sync::{Mutex, RwLock},
 };
 
 use chrono::{DateTime, Utc};
@@ -11,6 +11,7 @@ use tokio::time;
 use tokio_util::sync::CancellationToken;
 
 use self::cuddlyproto::StatusEnum;
+use super::block_id_to_datanode_map::BlockIdToDatanodeMap;
 use crate::{block::Block, cuddlyproto};
 
 // Create a const for cache size
@@ -52,8 +53,8 @@ pub(super) struct DataRegistry {
     start_time: DateTime<Utc>,
     heartbeat_cache: Mutex<LruCache<String, DateTime<Utc>>>,
     cancel_token: CancellationToken,
-    block_to_datanodes: Mutex<HashMap<Block, HashSet<String>>>,
-    datanode_to_blocks: Mutex<HashMap<String, HashSet<Block>>>,
+    block_to_datanodes: RwLock<BlockIdToDatanodeMap>,
+    datanode_to_blocks: RwLock<HashMap<String, HashSet<Block>>>,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
     // block_manager: BlockManager,
@@ -68,8 +69,8 @@ impl DataRegistry {
         let data_registry = Self {
             start_time: Utc::now(),
             heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
-            block_to_datanodes: Mutex::new(HashMap::new()),
-            datanode_to_blocks: Mutex::new(HashMap::new()),
+            block_to_datanodes: RwLock::new(BlockIdToDatanodeMap::new()),
+            datanode_to_blocks: RwLock::new(HashMap::new()),
             cancel_token,
         };
 
