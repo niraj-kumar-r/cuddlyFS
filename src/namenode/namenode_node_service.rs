@@ -2,12 +2,14 @@ use std::sync::Arc;
 
 use tonic::{Request, Response};
 
-use crate::cuddlyproto::{
-    node_service_server::NodeService, BlockReceivedRequest, BlockReceivedResponse, StatusCode,
-    StatusEnum,
-};
-
 use super::namenode_data_registry::DataRegistry;
+use crate::{
+    block::Block,
+    cuddlyproto::{
+        node_service_server::NodeService, BlockReceivedRequest, BlockReceivedResponse, StatusCode,
+        StatusEnum,
+    },
+};
 
 pub struct NamenodeNodeService {
     data_registry: Arc<DataRegistry>,
@@ -25,9 +27,10 @@ impl NodeService for NamenodeNodeService {
         &self,
         request: Request<BlockReceivedRequest>,
     ) -> Result<Response<BlockReceivedResponse>, tonic::Status> {
-        let request = request.into_inner();
-        let address = request.address;
-        let block = request.block.unwrap_or_default();
+        let request: BlockReceivedRequest = request.into_inner();
+        let BlockReceivedRequest { address, block } = request;
+        let block: Block = block.unwrap_or_default().into();
+        // todo : may need something other than default
 
         match self.data_registry.block_received(&address, &block) {
             Ok(()) => Ok(Response::new(BlockReceivedResponse {

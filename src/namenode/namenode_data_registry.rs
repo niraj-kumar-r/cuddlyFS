@@ -1,17 +1,17 @@
-use chrono::{DateTime, Utc};
-use log::info;
-use lru::LruCache;
-use tokio::time;
-use tokio_util::sync::CancellationToken;
-
-use crate::cuddlyproto;
 use std::{
     collections::{HashMap, HashSet},
     num::NonZero,
     sync::Mutex,
 };
 
-use self::cuddlyproto::{Block, StatusEnum};
+use chrono::{DateTime, Utc};
+use log::info;
+use lru::LruCache;
+use tokio::time;
+use tokio_util::sync::CancellationToken;
+
+use self::cuddlyproto::StatusEnum;
+use crate::{block::Block, cuddlyproto};
 
 // Create a const for cache size
 const CACHE_SIZE: usize = 100;
@@ -178,12 +178,8 @@ impl DataRegistry {
         }
     }
 
-    pub(crate) fn block_received(
-        &self,
-        address: &str,
-        block: &cuddlyproto::Block,
-    ) -> Result<(), StatusEnum> {
-        info!("Block received from address: {}", address);
+    pub(crate) fn block_received(&self, address: &str, block: &Block) -> Result<(), StatusEnum> {
+        info!("Block received from address: {}, {}", address, block);
 
         Ok(())
     }
