@@ -61,6 +61,10 @@ where
         }
     }
 
+    pub(crate) fn remove_key(&mut self, key: &K) -> Option<D> {
+        self.inner_map.remove(key).map(|info| info.data)
+    }
+
     pub(crate) fn remove_id_for_key(&mut self, key: &K, id: &I) -> bool {
         if let Some(info) = self.inner_map.get_mut(key) {
             info.ids.remove(id)

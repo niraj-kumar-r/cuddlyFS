@@ -2,6 +2,7 @@ use std::net::IpAddr;
 
 use uuid::Uuid;
 
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub(crate) struct DatanodeInfo {
     ip_address: IpAddr,
     datanode_uuid: Uuid,
@@ -9,6 +10,7 @@ pub(crate) struct DatanodeInfo {
     used_capacity: u64,
 }
 
+#[allow(dead_code)]
 impl DatanodeInfo {
     pub(crate) fn new(
         ip_address: impl Into<IpAddr>,
@@ -22,5 +24,21 @@ impl DatanodeInfo {
             total_capacity,
             used_capacity,
         }
+    }
+
+    pub(crate) fn ip_address(&self) -> &IpAddr {
+        &self.ip_address
+    }
+
+    pub(crate) fn datanode_uuid(&self) -> &Uuid {
+        &self.datanode_uuid
+    }
+
+    pub(crate) fn total_capacity(&self) -> u64 {
+        self.total_capacity
+    }
+
+    pub(crate) fn used_capacity(&self) -> u64 {
+        self.used_capacity
     }
 }

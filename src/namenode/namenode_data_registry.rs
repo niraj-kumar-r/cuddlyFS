@@ -13,6 +13,8 @@ use uuid::Uuid;
 use self::cuddlyproto::StatusEnum;
 use crate::{block::Block, cuddlyproto, utils::key_to_data_and_id_map::KeyToDataAndIdMap};
 
+use super::datanode_info::DatanodeInfo;
+
 // Create a const for cache size
 const CACHE_SIZE: usize = 100;
 const HEARTBEAT_TIMEOUT: i64 = 3 * 200;
@@ -52,8 +54,8 @@ pub(super) struct DataRegistry {
     start_time: DateTime<Utc>,
     heartbeat_cache: Mutex<LruCache<String, DateTime<Utc>>>,
     cancel_token: CancellationToken,
-    block_to_datanodes: RwLock<KeyToDataAndIdMap<Uuid, Block, String>>,
-    datanode_to_blocks: RwLock<KeyToDataAndIdMap<Uuid, Uuid, Block>>,
+    block_to_datanodes: RwLock<KeyToDataAndIdMap<Uuid, Block, Uuid>>,
+    datanode_to_blocks: RwLock<KeyToDataAndIdMap<Uuid, DatanodeInfo, Uuid>>,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
     // block_manager: BlockManager,
