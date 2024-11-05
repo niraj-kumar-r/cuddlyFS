@@ -1,40 +1,43 @@
 use std::collections::{HashMap, HashSet};
-
-use crate::block::Block;
+use std::hash::Hash;
 
 #[derive(Debug)]
-struct BlockInfo {
-    block: Block,
-    datanode_ids: HashSet<String>,
+struct BlockInfo<B, D> {
+    block: B,
+    datanode_ids: HashSet<D>,
 }
 
 #[derive(Debug)]
 #[allow(dead_code)]
-pub(crate) struct BlockIdToDatanodeMap {
-    blockmap: HashMap<u64, BlockInfo>,
+pub(crate) struct BlockIdToDatanodeMap<K, B, D> {
+    blockmap: HashMap<K, BlockInfo<B, D>>,
 }
 
 #[allow(dead_code)]
-impl BlockIdToDatanodeMap {
+impl<K, B, D> BlockIdToDatanodeMap<K, B, D>
+where
+    K: Eq + Hash,
+    D: Eq + Hash,
+{
     pub(crate) fn new() -> Self {
         Self {
             blockmap: HashMap::new(),
         }
     }
 
-    pub(crate) fn contains_block(&self, block_id: u64) -> bool {
-        self.blockmap.contains_key(&block_id)
+    pub(crate) fn contains_block(&self, block_id: &K) -> bool {
+        self.blockmap.contains_key(block_id)
     }
 
-    pub(crate) fn contains_datanode_for_block(&self, block_id: u64, datanode_id: &str) -> bool {
+    pub(crate) fn contains_datanode_for_block(&self, block_id: &K, datanode_id: &D) -> bool {
         self.blockmap
-            .get(&block_id)
+            .get(block_id)
             .map(|info| info.datanode_ids.contains(datanode_id))
             .unwrap_or(false)
     }
 
-    pub(crate) fn insert_block(&mut self, block: Block) {
-        self.blockmap.entry(block.id).or_insert_with(|| BlockInfo {
+    pub(crate) fn insert_block(&mut self, block_id: K, block: B) {
+        self.blockmap.entry(block_id).or_insert_with(|| BlockInfo {
             block,
             datanode_ids: HashSet::new(),
         });
@@ -42,16 +45,21 @@ impl BlockIdToDatanodeMap {
 
     /// Insert a datanode id into the blockmap.
     /// Returns true if the block is not in the map, false otherwise.
-    pub(crate) fn insert_datanode_for_block(&mut self, block: &Block, datanode_id: String) -> bool {
-        if let Some(block_info) = self.blockmap.get_mut(&block.id) {
+    pub(crate) fn insert_datanode_for_block(
+        &mut self,
+        block_id: K,
+        block: B,
+        datanode_id: D,
+    ) -> bool {
+        if let Some(block_info) = self.blockmap.get_mut(&block_id) {
             block_info.datanode_ids.insert(datanode_id)
         } else {
             let mut datanode_ids = HashSet::new();
             datanode_ids.insert(datanode_id);
             self.blockmap.insert(
-                block.id,
+                block_id,
                 BlockInfo {
-                    block: block.clone(),
+                    block,
                     datanode_ids,
                 },
             );
@@ -59,19 +67,19 @@ impl BlockIdToDatanodeMap {
         }
     }
 
-    pub(crate) fn remove_datanode_for_block(&mut self, block: &Block, datanode_id: &str) -> bool {
-        if let Some(block_info) = self.blockmap.get_mut(&block.id) {
+    pub(crate) fn remove_datanode_for_block(&mut self, block_id: &K, datanode_id: &D) -> bool {
+        if let Some(block_info) = self.blockmap.get_mut(block_id) {
             block_info.datanode_ids.remove(datanode_id)
         } else {
             false
         }
     }
 
-    pub(crate) fn get_block(&self, block_id: u64) -> Option<Block> {
-        self.blockmap.get(&block_id).map(|info| info.block.clone())
+    pub(crate) fn get_block(&self, block_id: &K) -> Option<&B> {
+        self.blockmap.get(block_id).map(|info| &info.block)
     }
 
-    pub(crate) fn get_datanodes_for_block(&self, block_id: u64) -> Option<&HashSet<String>> {
-        self.blockmap.get(&block_id).map(|info| &info.datanode_ids)
+    pub(crate) fn get_datanodes_for_block(&self, block_id: &K) -> Option<&HashSet<D>> {
+        self.blockmap.get(block_id).map(|info| &info.datanode_ids)
     }
 }
