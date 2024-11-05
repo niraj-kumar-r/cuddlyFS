@@ -1,5 +1,4 @@
 use std::{
-    collections::{HashMap, HashSet},
     num::NonZero,
     sync::{Mutex, RwLock},
 };
@@ -9,10 +8,10 @@ use log::info;
 use lru::LruCache;
 use tokio::time;
 use tokio_util::sync::CancellationToken;
+use uuid::Uuid;
 
 use self::cuddlyproto::StatusEnum;
-use super::block_id_to_datanode_map::BlockIdToDatanodeMap;
-use crate::{block::Block, cuddlyproto};
+use crate::{block::Block, cuddlyproto, utils::key_to_data_and_id_map::KeyToDataAndIdMap};
 
 // Create a const for cache size
 const CACHE_SIZE: usize = 100;
@@ -53,8 +52,8 @@ pub(super) struct DataRegistry {
     start_time: DateTime<Utc>,
     heartbeat_cache: Mutex<LruCache<String, DateTime<Utc>>>,
     cancel_token: CancellationToken,
-    block_to_datanodes: RwLock<BlockIdToDatanodeMap<u64, Block, String>>,
-    datanode_to_blocks: RwLock<HashMap<String, HashSet<Block>>>,
+    block_to_datanodes: RwLock<KeyToDataAndIdMap<Uuid, Block, String>>,
+    datanode_to_blocks: RwLock<KeyToDataAndIdMap<String, String, Block>>,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
     // block_manager: BlockManager,
@@ -69,8 +68,8 @@ impl DataRegistry {
         let data_registry = Self {
             start_time: Utc::now(),
             heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
-            block_to_datanodes: RwLock::new(BlockIdToDatanodeMap::new()),
-            datanode_to_blocks: RwLock::new(HashMap::new()),
+            block_to_datanodes: RwLock::new(KeyToDataAndIdMap::new()),
+            datanode_to_blocks: RwLock::new(KeyToDataAndIdMap::new()),
             cancel_token,
         };
 
