@@ -53,7 +53,7 @@ pub(super) struct DataRegistry {
     heartbeat_cache: Mutex<LruCache<String, DateTime<Utc>>>,
     cancel_token: CancellationToken,
     block_to_datanodes: RwLock<KeyToDataAndIdMap<Uuid, Block, String>>,
-    datanode_to_blocks: RwLock<KeyToDataAndIdMap<String, String, Block>>,
+    datanode_to_blocks: RwLock<KeyToDataAndIdMap<Uuid, Uuid, Block>>,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
     // block_manager: BlockManager,
