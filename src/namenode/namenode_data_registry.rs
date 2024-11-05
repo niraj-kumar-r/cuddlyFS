@@ -92,7 +92,7 @@ impl DataRegistry {
     pub fn handle_heartbeat(
         &self,
         datanode_registration: cuddlyproto::DatanodeRegistrationProto,
-        storage_reports: Vec<cuddlyproto::StorageReportProto>,
+        _storage_reports: Vec<cuddlyproto::StorageReportProto>,
     ) -> cuddlyproto::HeartbeatResponse {
         let datanode_uuid = datanode_registration
             .datanode_id

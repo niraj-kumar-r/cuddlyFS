@@ -19,15 +19,15 @@ mod namenode_node_service;
 pub struct Namenode {
     data_registry: Arc<DataRegistry>,
     cancel_token: CancellationToken,
-    shutdown_send: UnboundedSender<i8>,
+    _shutdown_send: UnboundedSender<i8>,
 }
 
 impl Namenode {
-    pub fn new(cancel_token: CancellationToken, shutdown_send: UnboundedSender<i8>) -> Self {
+    pub fn new(cancel_token: CancellationToken, _shutdown_send: UnboundedSender<i8>) -> Self {
         Self {
             data_registry: Arc::new(DataRegistry::new(cancel_token.clone())),
             cancel_token,
-            shutdown_send,
+            _shutdown_send,
         }
     }
 

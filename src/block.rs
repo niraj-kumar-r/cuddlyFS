@@ -11,6 +11,7 @@ pub struct Block {
     pub len: u64,
 }
 
+#[allow(dead_code)]
 impl Block {
     pub fn new(id: Uuid, len: u64) -> Self {
         Self { id, len }
