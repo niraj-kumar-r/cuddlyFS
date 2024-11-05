@@ -1,17 +1,18 @@
 use std::hash::{Hash, Hasher};
 
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::cuddlyproto;
 
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Block {
-    pub id: u64,
+    pub id: Uuid,
     pub len: u64,
 }
 
 impl Block {
-    pub fn new(id: u64, len: u64) -> Self {
+    pub fn new(id: Uuid, len: u64) -> Self {
         Self { id, len }
     }
 
@@ -43,6 +44,7 @@ impl Hash for Block {
 impl From<cuddlyproto::Block> for Block {
     fn from(value: cuddlyproto::Block) -> Self {
         let cuddlyproto::Block { id, len } = value;
+        let id = Uuid::parse_str(&id).unwrap();
         Self { id, len }
     }
 }
@@ -50,6 +52,7 @@ impl From<cuddlyproto::Block> for Block {
 impl From<Block> for cuddlyproto::Block {
     fn from(value: Block) -> Self {
         let Block { id, len } = value;
+        let id = id.to_string();
         Self { id, len }
     }
 }

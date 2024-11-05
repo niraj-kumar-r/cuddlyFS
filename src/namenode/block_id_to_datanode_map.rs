@@ -36,6 +36,8 @@ where
             .unwrap_or(false)
     }
 
+    /// Insert a block into the blockmap.
+    /// Does nothing if the block_id is already in the map.
     pub(crate) fn insert_block(&mut self, block_id: K, block: B) {
         self.blockmap.entry(block_id).or_insert_with(|| BlockInfo {
             block,

@@ -77,6 +77,6 @@ message StorageReportProto {
 }
 
 message Block {
-  uint64 id = 1;
+  string id = 1;
   uint64 len = 2;
 }
