@@ -68,7 +68,7 @@ pub(super) struct DataRegistry {
     datanode_to_blocks: RwLock<KeyToDataAndIdMap<Uuid, DatanodeInfo, Uuid>>,
     namenode_progress_tracker: RwLock<NamenodeProgressTracker>,
     fs_directory: RwLock<NamenodeState>,
-    operation_logger: Mutex<OperationLogger>,
+    operation_logger: tokio::sync::Mutex<OperationLogger>,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
     // block_manager: BlockManager,
@@ -85,7 +85,7 @@ impl DataRegistry {
             datanode_to_blocks: RwLock::new(KeyToDataAndIdMap::new()),
             namenode_progress_tracker: RwLock::new(NamenodeProgressTracker::new()),
             fs_directory: RwLock::new(NamenodeState::new()),
-            operation_logger: Mutex::new(OperationLogger::open(&APP_CONFIG)?),
+            operation_logger: tokio::sync::Mutex::new(OperationLogger::open(&APP_CONFIG)?),
             cancel_token,
         };
 
@@ -228,7 +228,19 @@ impl DataRegistry {
     }
 
     async fn log_operation(&self, op: EditOperation) {
-        let mut edit_logger = self.operation_logger.lock().unwrap();
+        let mut edit_logger = self.operation_logger.lock().await;
         edit_logger.log_operation(&op).await;
+    }
+
+    pub(crate) async fn make_dir(&self, path: &str) -> CuddlyResult<()> {
+        self.non_logging_make_dir(path)?;
+        self.log_operation(EditOperation::Mkdir(path.to_owned()))
+            .await;
+        Ok(())
+    }
+
+    fn non_logging_make_dir(&self, path: &str) -> CuddlyResult<()> {
+        let mut fs_directory = self.fs_directory.write().unwrap();
+        fs_directory.make_dir(path)
     }
 }

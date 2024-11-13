@@ -25,15 +25,28 @@ impl DirectoryService for NamenodeDirectoryService {
         &self,
         request: Request<CreateDirectoryRequest>,
     ) -> Result<tonic::Response<CreateDirectoryResponse>, tonic::Status> {
-        // let request_data = request.into_inner();
+        let request_data = request.into_inner();
 
-        Ok(tonic::Response::new(CreateDirectoryResponse {
-            status: Some(StatusCode {
-                success: false,
-                code: 0,
-                message: "No Success".to_string(),
-            }),
-        }))
+        match self
+            .data_registry
+            .make_dir(&request_data.directory_path)
+            .await
+        {
+            Ok(_) => Ok(tonic::Response::new(CreateDirectoryResponse {
+                status: Some(StatusCode {
+                    success: true,
+                    code: 0,
+                    message: "Success".to_string(),
+                }),
+            })),
+            Err(e) => Ok(tonic::Response::new(CreateDirectoryResponse {
+                status: Some(StatusCode {
+                    success: false,
+                    code: 1,
+                    message: e.to_string(),
+                }),
+            })),
+        }
     }
 
     async fn list_directory(
