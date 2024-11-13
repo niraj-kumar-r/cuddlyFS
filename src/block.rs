@@ -17,9 +17,9 @@ impl Block {
         Self { id, len }
     }
 
-    // pub fn filename(&self) -> String {
-    //     format!("block_{}", self.id)
-    // }
+    pub fn filename(&self) -> String {
+        format!("block_{}", self.id)
+    }
 }
 
 impl std::fmt::Display for Block {

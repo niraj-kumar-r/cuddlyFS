@@ -11,7 +11,10 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use self::cuddlyproto::StatusEnum;
-use crate::{block::Block, cuddlyproto, utils::key_to_data_and_id_map::KeyToDataAndIdMap};
+use crate::{
+    block::Block, cuddlyproto, errors::CuddlyResult,
+    utils::key_to_data_and_id_map::KeyToDataAndIdMap,
+};
 
 use super::datanode_info::DatanodeInfo;
 
@@ -180,8 +183,21 @@ impl DataRegistry {
         }
     }
 
-    pub(crate) fn block_received(&self, address: &str, block: &Block) -> Result<(), StatusEnum> {
+    pub(crate) fn block_received(&self, address: &str, block: &Block) -> CuddlyResult<()> {
         info!("Block received from address: {}, {}", address, block);
+
+        // let mut datanode_to_blocks = self.datanode_to_blocks.write().unwrap();
+        let mut block_to_datanodes = self.block_to_datanodes.write().unwrap();
+
+        let new_reported = block_to_datanodes.insert_id_for_key(
+            block.id,
+            *block,
+            Uuid::parse_str(address).unwrap(),
+        );
+
+        if new_reported {
+            //
+        }
 
         Ok(())
     }

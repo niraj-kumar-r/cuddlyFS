@@ -4,7 +4,7 @@ use config;
 
 #[derive(Debug, PartialEq)]
 #[allow(dead_code)]
-pub enum CudddlyError {
+pub enum CuddlyError {
     IOError(String),
     RPCError(String),
     AddressParseError(String),
@@ -15,54 +15,54 @@ pub enum CudddlyError {
     ProtoError(String),
 }
 
-impl Display for CudddlyError {
+impl Display for CuddlyError {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
 }
 
-impl std::error::Error for CudddlyError {}
+impl std::error::Error for CuddlyError {}
 
-impl From<std::io::Error> for CudddlyError {
+impl From<std::io::Error> for CuddlyError {
     fn from(error: std::io::Error) -> Self {
-        CudddlyError::IOError(error.to_string())
+        CuddlyError::IOError(error.to_string())
     }
 }
 
-impl From<tonic::transport::Error> for CudddlyError {
+impl From<tonic::transport::Error> for CuddlyError {
     fn from(error: tonic::transport::Error) -> Self {
-        CudddlyError::RPCError(error.to_string())
+        CuddlyError::RPCError(error.to_string())
     }
 }
 
-impl From<std::net::AddrParseError> for CudddlyError {
+impl From<std::net::AddrParseError> for CuddlyError {
     fn from(error: std::net::AddrParseError) -> Self {
-        CudddlyError::AddressParseError(error.to_string())
+        CuddlyError::AddressParseError(error.to_string())
     }
 }
 
-impl From<config::ConfigError> for CudddlyError {
+impl From<config::ConfigError> for CuddlyError {
     fn from(error: config::ConfigError) -> Self {
-        CudddlyError::ConfigError(error.to_string())
+        CuddlyError::ConfigError(error.to_string())
     }
 }
 
-impl From<tonic::Status> for CudddlyError {
+impl From<tonic::Status> for CuddlyError {
     fn from(error: tonic::Status) -> Self {
-        CudddlyError::RPCError(error.to_string())
+        CuddlyError::RPCError(error.to_string())
     }
 }
 
-impl From<prost::EncodeError> for CudddlyError {
+impl From<prost::EncodeError> for CuddlyError {
     fn from(error: prost::EncodeError) -> Self {
-        CudddlyError::ProtoError(error.to_string())
+        CuddlyError::ProtoError(error.to_string())
     }
 }
 
-impl From<prost::DecodeError> for CudddlyError {
+impl From<prost::DecodeError> for CuddlyError {
     fn from(error: prost::DecodeError) -> Self {
-        CudddlyError::ProtoError(error.to_string())
+        CuddlyError::ProtoError(error.to_string())
     }
 }
 
-pub type CuddlyResult<T> = std::result::Result<T, CudddlyError>;
+pub type CuddlyResult<T> = std::result::Result<T, CuddlyError>;

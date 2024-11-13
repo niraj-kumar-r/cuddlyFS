@@ -7,14 +7,18 @@ use tokio::sync::mpsc::UnboundedSender;
 use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 
-use crate::cuddlyproto::{
-    heartbeat_service_server::HeartbeatServiceServer, node_service_server::NodeServiceServer,
+use crate::{
+    cuddlyproto::{
+        heartbeat_service_server::HeartbeatServiceServer, node_service_server::NodeServiceServer,
+    },
+    errors::CuddlyResult,
 };
 
 mod datanode_info;
 mod namenode_data_registry;
 mod namenode_heartbeat_service;
 mod namenode_node_service;
+mod namenode_progress_tracker;
 
 #[derive(Debug)]
 pub struct Namenode {
@@ -32,7 +36,7 @@ impl Namenode {
         }
     }
 
-    pub async fn run(&self, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run(&self, addr: SocketAddr) -> CuddlyResult<()> {
         let rpc_service = Server::builder()
             .add_service(HeartbeatServiceServer::new(NamenodeHeartbeatService::new(
                 Arc::clone(&self.data_registry),
