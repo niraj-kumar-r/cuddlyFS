@@ -10,7 +10,6 @@ use tokio::time;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
-use self::cuddlyproto::StatusEnum;
 use crate::{
     block::Block, cuddlyproto, errors::CuddlyResult,
     utils::key_to_data_and_id_map::KeyToDataAndIdMap,
