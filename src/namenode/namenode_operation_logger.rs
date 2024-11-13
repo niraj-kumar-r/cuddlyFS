@@ -20,6 +20,7 @@ pub enum EditOperation {
 }
 
 /// OperationLogger is responsible to log all namenode modifications.
+#[derive(Debug)]
 pub struct OperationLogger {
     old_log: BufStream<File>,
     new_log: BufStream<File>,
