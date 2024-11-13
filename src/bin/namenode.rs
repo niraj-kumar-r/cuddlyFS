@@ -1,12 +1,12 @@
 use std::{env, net::SocketAddr};
 
-use cuddlyfs::{namenode::Namenode, APP_CONFIG};
+use cuddlyfs::{errors::CuddlyResult, namenode::Namenode, APP_CONFIG};
 use log::info;
 use tokio::{signal, sync::mpsc};
 use tokio_util::sync::CancellationToken;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 4)]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> CuddlyResult<()> {
     env::set_var("RUST_LOG", "info");
     env_logger::init();
 
