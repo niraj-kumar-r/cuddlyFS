@@ -41,6 +41,12 @@ impl From<std::net::AddrParseError> for CuddlyError {
     }
 }
 
+impl From<serde_json::Error> for CuddlyError {
+    fn from(error: serde_json::Error) -> Self {
+        CuddlyError::ConfigError(error.to_string())
+    }
+}
+
 impl From<config::ConfigError> for CuddlyError {
     fn from(error: config::ConfigError) -> Self {
         CuddlyError::ConfigError(error.to_string())

@@ -17,7 +17,10 @@ use crate::{
     utils::key_to_data_and_id_map::KeyToDataAndIdMap,
 };
 
-use super::{datanode_info::DatanodeInfo, namenode_progress_tracker::NamenodeProgressTracker};
+use super::{
+    datanode_info::DatanodeInfo, namenode_progress_tracker::NamenodeProgressTracker,
+    namenode_state::NamenodeState,
+};
 
 // Create a const for cache size
 const CACHE_SIZE: usize = 100;
@@ -61,12 +64,12 @@ pub(super) struct DataRegistry {
     block_to_datanodes: RwLock<KeyToDataAndIdMap<Uuid, Block, Uuid>>,
     datanode_to_blocks: RwLock<KeyToDataAndIdMap<Uuid, DatanodeInfo, Uuid>>,
     namenode_progress_tracker: RwLock<NamenodeProgressTracker>,
+    fs_directory: RwLock<NamenodeState>,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
     // block_manager: BlockManager,
     // datanode_manager: DatanodeManager,
     // lease_manager: LeaseManager,
-    // fs_directory: FSDirectory,
     // edit_log: FSEditLog,
 }
 
@@ -78,6 +81,7 @@ impl DataRegistry {
             block_to_datanodes: RwLock::new(KeyToDataAndIdMap::new()),
             datanode_to_blocks: RwLock::new(KeyToDataAndIdMap::new()),
             namenode_progress_tracker: RwLock::new(NamenodeProgressTracker::new()),
+            fs_directory: RwLock::new(NamenodeState::new()),
             cancel_token,
         };
 

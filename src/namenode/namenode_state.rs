@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 const ALLOWED_CHARACTERS: &str = "=-_";
 
+#[derive(Debug)]
 #[allow(dead_code)]
 enum IndexTreeNode {
     Directory {
@@ -55,6 +56,7 @@ impl IndexTreeNode {
     }
 }
 
+#[derive(Debug)]
 #[allow(dead_code)]
 pub struct NamenodeState {
     root: IndexTreeNode,

@@ -21,6 +21,7 @@ mod namenode_data_registry;
 mod namenode_directory_service;
 mod namenode_heartbeat_service;
 mod namenode_node_service;
+mod namenode_operation_logger;
 mod namenode_progress_tracker;
 mod namenode_state;
 

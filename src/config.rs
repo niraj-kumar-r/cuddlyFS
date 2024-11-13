@@ -1,7 +1,7 @@
 use config::{Config, ConfigError, Environment, File};
 use lazy_static::lazy_static;
 use serde::Deserialize;
-use std::env;
+use std::{env, path::PathBuf};
 
 lazy_static! {
     pub static ref APP_CONFIG: AppConfig = AppConfig::new().unwrap();
@@ -17,6 +17,7 @@ pub struct DatanodeConfig {
 #[allow(unused)]
 pub struct NamenodeConfig {
     pub bind_address: String,
+    pub name_dir: PathBuf,
 }
 
 #[derive(Debug, Deserialize)]
@@ -62,8 +63,13 @@ impl Default for DatanodeConfig {
 
 impl Default for NamenodeConfig {
     fn default() -> Self {
+        let mut namedir = std::env::temp_dir();
+        namedir.push("cuddlyfs");
+        namedir.push("namenode");
+
         Self {
             bind_address: "[::1]:50051".into(),
+            name_dir: PathBuf::from(namedir),
         }
     }
 }
