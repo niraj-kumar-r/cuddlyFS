@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use crate::errors::{CuddlyError, CuddlyResult};
 
+#[derive(Debug)]
 pub(crate) struct NamenodeProgressTracker {
     filename_to_blocks: HashMap<String, Vec<Uuid>>,
     block_to_replication_count: HashMap<Uuid, u64>,

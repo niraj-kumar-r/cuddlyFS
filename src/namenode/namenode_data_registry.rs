@@ -11,11 +11,13 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::{
-    block::Block, cuddlyproto, errors::CuddlyResult,
+    block::Block,
+    cuddlyproto,
+    errors::{CuddlyError, CuddlyResult},
     utils::key_to_data_and_id_map::KeyToDataAndIdMap,
 };
 
-use super::datanode_info::DatanodeInfo;
+use super::{datanode_info::DatanodeInfo, namenode_progress_tracker::NamenodeProgressTracker};
 
 // Create a const for cache size
 const CACHE_SIZE: usize = 100;
@@ -58,6 +60,7 @@ pub(super) struct DataRegistry {
     cancel_token: CancellationToken,
     block_to_datanodes: RwLock<KeyToDataAndIdMap<Uuid, Block, Uuid>>,
     datanode_to_blocks: RwLock<KeyToDataAndIdMap<Uuid, DatanodeInfo, Uuid>>,
+    namenode_progress_tracker: RwLock<NamenodeProgressTracker>,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
     // block_manager: BlockManager,
@@ -74,6 +77,7 @@ impl DataRegistry {
             heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
             block_to_datanodes: RwLock::new(KeyToDataAndIdMap::new()),
             datanode_to_blocks: RwLock::new(KeyToDataAndIdMap::new()),
+            namenode_progress_tracker: RwLock::new(NamenodeProgressTracker::new()),
             cancel_token,
         };
 
@@ -182,20 +186,34 @@ impl DataRegistry {
         }
     }
 
-    pub(crate) fn block_received(&self, address: &str, block: &Block) -> CuddlyResult<()> {
-        info!("Block received from address: {}, {}", address, block);
+    pub(crate) fn block_received(&self, node_id: &str, block: &Block) -> CuddlyResult<()> {
+        info!("Block received from node_id: {}, {}", node_id, block);
 
-        // let mut datanode_to_blocks = self.datanode_to_blocks.write().unwrap();
-        let mut block_to_datanodes = self.block_to_datanodes.write().unwrap();
+        let datanode_uuid = match Uuid::parse_str(node_id) {
+            Ok(datanode_uuid) => datanode_uuid,
+            Err(_) => return Err(CuddlyError::FSError(format!("Invalid UUID: {}", node_id))),
+        };
 
-        let new_reported = block_to_datanodes.insert_id_for_key(
-            block.id,
-            *block,
-            Uuid::parse_str(address).unwrap(),
-        );
+        let new_reported = {
+            let mut block_to_datanodes = self.block_to_datanodes.write().unwrap();
+            block_to_datanodes.insert_id_for_key(block.id, *block, datanode_uuid)
+        };
 
         if new_reported {
-            //
+            let mut progress_tracker = self.namenode_progress_tracker.write().unwrap();
+            progress_tracker.increment_replication(block.id);
+        }
+
+        let insert_id_success = {
+            let mut datanode_to_blocks = self.datanode_to_blocks.write().unwrap();
+            datanode_to_blocks.insert_id_for_key_if_present(datanode_uuid, block.id)
+        };
+
+        if !insert_id_success {
+            return Err(CuddlyError::FSError(format!(
+                "Block received from unregistered datanode '{}'.",
+                node_id
+            )));
         }
 
         Ok(())

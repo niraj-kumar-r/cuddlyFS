@@ -61,6 +61,16 @@ where
         }
     }
 
+    /// Insert an id into the map if the key is present.
+    /// Returns true if the key is in the map, false otherwise.
+    pub(crate) fn insert_id_for_key_if_present(&mut self, key: K, id: I) -> bool {
+        if let Some(info) = self.inner_map.get_mut(&key) {
+            info.ids.insert(id)
+        } else {
+            false
+        }
+    }
+
     pub(crate) fn remove_key(&mut self, key: &K) -> Option<D> {
         self.inner_map.remove(key).map(|info| info.data)
     }
