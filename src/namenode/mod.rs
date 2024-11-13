@@ -1,5 +1,6 @@
 use log::info;
 use namenode_data_registry::DataRegistry;
+use namenode_directory_service::NamenodeDirectoryService;
 use namenode_heartbeat_service::NamenodeHeartbeatService;
 use namenode_node_service::NamenodeNodeService;
 use std::{net::SocketAddr, sync::Arc};
@@ -9,6 +10,7 @@ use tonic::transport::Server;
 
 use crate::{
     cuddlyproto::{
+        directory_service_server::DirectoryServiceServer,
         heartbeat_service_server::HeartbeatServiceServer, node_service_server::NodeServiceServer,
     },
     errors::CuddlyResult,
@@ -16,6 +18,7 @@ use crate::{
 
 mod datanode_info;
 mod namenode_data_registry;
+mod namenode_directory_service;
 mod namenode_heartbeat_service;
 mod namenode_node_service;
 mod namenode_progress_tracker;
@@ -42,6 +45,9 @@ impl Namenode {
                 Arc::clone(&self.data_registry),
             )))
             .add_service(NodeServiceServer::new(NamenodeNodeService::new(
+                Arc::clone(&self.data_registry),
+            )))
+            .add_service(DirectoryServiceServer::new(NamenodeDirectoryService::new(
                 Arc::clone(&self.data_registry),
             )))
             .serve(addr);

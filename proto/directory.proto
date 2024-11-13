@@ -51,5 +51,5 @@ message DeleteDirectoryResponse {
 service DirectoryService {
   rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryResponse);
   rpc CreateDirectory (CreateDirectoryRequest) returns (CreateDirectoryResponse);
-  rpc DeleteDirectory (DeleteDirectoryRequest) returns (DeleteDirectoryResponse);
+  // rpc DeleteDirectory (DeleteDirectoryRequest) returns (DeleteDirectoryResponse);
 }
