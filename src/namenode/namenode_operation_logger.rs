@@ -15,7 +15,6 @@ use tracing::error;
 /// A namenode modification.
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub enum EditOperation {
-    /// A created directory
     Mkdir(String),
     AddFile(String, Vec<Block>),
 }
@@ -59,11 +58,11 @@ impl OperationLogger {
     pub async fn log_operation(&mut self, op: &EditOperation) {
         match self.non_exiting_log_operation(&op).await {
             Err(e) => {
+                // TODO: Maybe we should panic here?
                 error!(
-                    "Cannot write log operation '{:?}'.
-                    Reason: {:?}.
-                    This means, that this operation is not recoverable.
-                    Therefore, will exit now!",
+                    "Failed to log operation '{:?}'.
+                    Error: {:?}.This operation is not recoverable.
+                    Exiting now.",
                     op, e
                 );
                 std::process::exit(1);
