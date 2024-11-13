@@ -15,10 +15,13 @@ use crate::{
     cuddlyproto,
     errors::{CuddlyError, CuddlyResult},
     utils::key_to_data_and_id_map::KeyToDataAndIdMap,
+    APP_CONFIG,
 };
 
 use super::{
-    datanode_info::DatanodeInfo, namenode_progress_tracker::NamenodeProgressTracker,
+    datanode_info::DatanodeInfo,
+    namenode_operation_logger::{EditOperation, OperationLogger},
+    namenode_progress_tracker::NamenodeProgressTracker,
     namenode_state::NamenodeState,
 };
 
@@ -65,16 +68,16 @@ pub(super) struct DataRegistry {
     datanode_to_blocks: RwLock<KeyToDataAndIdMap<Uuid, DatanodeInfo, Uuid>>,
     namenode_progress_tracker: RwLock<NamenodeProgressTracker>,
     fs_directory: RwLock<NamenodeState>,
+    operation_logger: Mutex<OperationLogger>,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
     // block_manager: BlockManager,
     // datanode_manager: DatanodeManager,
     // lease_manager: LeaseManager,
-    // edit_log: FSEditLog,
 }
 
 impl DataRegistry {
-    pub(super) fn new(cancel_token: CancellationToken) -> Self {
+    pub(super) fn new(cancel_token: CancellationToken) -> CuddlyResult<Self> {
         let data_registry = Self {
             start_time: Utc::now(),
             heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
@@ -82,10 +85,11 @@ impl DataRegistry {
             datanode_to_blocks: RwLock::new(KeyToDataAndIdMap::new()),
             namenode_progress_tracker: RwLock::new(NamenodeProgressTracker::new()),
             fs_directory: RwLock::new(NamenodeState::new()),
+            operation_logger: Mutex::new(OperationLogger::open(&APP_CONFIG)?),
             cancel_token,
         };
 
-        data_registry
+        Ok(data_registry)
     }
 
     pub(crate) async fn run(&self) {
@@ -221,5 +225,10 @@ impl DataRegistry {
         }
 
         Ok(())
+    }
+
+    async fn log_operation(&self, op: EditOperation) {
+        let mut edit_logger = self.operation_logger.lock().unwrap();
+        edit_logger.log_operation(&op).await;
     }
 }

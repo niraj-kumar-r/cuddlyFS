@@ -33,12 +33,15 @@ pub struct Namenode {
 }
 
 impl Namenode {
-    pub fn new(cancel_token: CancellationToken, _shutdown_send: UnboundedSender<i8>) -> Self {
-        Self {
-            data_registry: Arc::new(DataRegistry::new(cancel_token.clone())),
+    pub fn new(
+        cancel_token: CancellationToken,
+        _shutdown_send: UnboundedSender<i8>,
+    ) -> CuddlyResult<Self> {
+        Ok(Self {
+            data_registry: Arc::new(DataRegistry::new(cancel_token.clone())?),
             cancel_token,
             _shutdown_send,
-        }
+        })
     }
 
     pub async fn run(&self, addr: SocketAddr) -> CuddlyResult<()> {

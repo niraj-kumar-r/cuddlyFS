@@ -13,7 +13,7 @@ async fn main() -> CuddlyResult<()> {
     let addr: SocketAddr = APP_CONFIG.namenode.bind_address.parse().unwrap();
     let (shutdown_send, mut shutdown_recv) = mpsc::unbounded_channel::<i8>();
     let cancel_token: CancellationToken = CancellationToken::new();
-    let namenode: Namenode = Namenode::new(cancel_token.clone(), shutdown_send);
+    let namenode: Namenode = Namenode::new(cancel_token.clone(), shutdown_send)?;
 
     let running_namenode_handle = tokio::spawn(async move {
         info!("Starting namenode on {}", addr);
