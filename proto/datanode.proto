@@ -20,3 +20,8 @@ message DatanodeRegistrationProto {
     ExportedBlockKeysProto keys = 3;   // Block keys
     string softwareVersion = 4;        // Software version of the DN, e.g. "2.0.0"
 }
+
+message BlockWithTargets {
+    Block block = 1;
+    DatanodeRegistrationProto targets = 2;
+}

@@ -80,3 +80,8 @@ message Block {
   string id = 1;
   uint64 len = 2;
 }
+
+message BlockWithLocations {
+  Block block = 1;
+  string locations = 2;
+}

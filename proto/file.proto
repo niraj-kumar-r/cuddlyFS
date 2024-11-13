@@ -21,18 +21,20 @@ message OpenFileRequest {
   cuddlyproto.AuthToken auth_token = 1;
   string file_path = 2;
 
-  enum Mode {
-    READ = 0;
-    WRITE = 1;
-    READ_WRITE = 2;
-  }
-  Mode mode = 3;
+  // implement mode
+  // enum Mode {
+  //   READ = 0;
+  //   WRITE = 1;
+  //   READ_WRITE = 2;
+  // }
+  // Mode mode = 3;
 }
 
 // Response after opening a file
 message OpenFileResponse {
-  string file_handle = 1;
-  cuddlyproto.StatusCode status = 2;
+  Block block = 1;
+  string locations = 2;
+  cuddlyproto.StatusCode status = 3;
 }
 
 // Request to read from a file
@@ -75,8 +77,10 @@ message CloseFileResponse {
 
 // File service with file-related operations
 service FileService {
-  rpc OpenFile (OpenFileRequest) returns (OpenFileResponse);
-  rpc ReadFile (ReadFileRequest) returns (ReadFileResponse);
-  rpc WriteFile (WriteFileRequest) returns (WriteFileResponse);
-  rpc CloseFile (CloseFileRequest) returns (CloseFileResponse);
+  rpc open_file(OpenFileRequest) returns (OpenFileResponse);
+  // rpc start_file_create(CreateFileRequest) returns (BlockWithTargets);
+  // rpc finish_file_create(CreateFileRequest) returns (EmptyMessage);
+  // rpc abort_file_create(CreateFileRequest) returns (EmptyMessage);
+  // rpc add_block(AddBlockRequest) returns (BlockWithTargets);
+  // rpc abort_block_write(AbortBlockWriteRequest) returns (EmptyMessage);
 }
