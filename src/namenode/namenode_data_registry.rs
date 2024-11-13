@@ -243,4 +243,13 @@ impl DataRegistry {
         let mut fs_directory = self.fs_directory.write().unwrap();
         fs_directory.make_dir(path)
     }
+
+    pub(crate) fn list(&self, path: &str) -> CuddlyResult<Vec<String>> {
+        let fs_directory = self.fs_directory.read().unwrap();
+        Ok(fs_directory
+            .list(path)?
+            .iter()
+            .map(|s| String::from(*s))
+            .collect())
+    }
 }

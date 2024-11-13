@@ -57,11 +57,11 @@ impl IndexTreeNode {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct NamenodeState {
     root: IndexTreeNode,
 }
 
+#[allow(dead_code)]
 impl NamenodeState {
     pub fn new() -> Self {
         Self {

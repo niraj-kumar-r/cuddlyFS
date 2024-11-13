@@ -53,15 +53,25 @@ impl DirectoryService for NamenodeDirectoryService {
         &self,
         request: Request<ListDirectoryRequest>,
     ) -> Result<tonic::Response<ListDirectoryResponse>, tonic::Status> {
-        // let request_data = request.into_inner();
+        let request_data = request.into_inner();
 
-        Ok(tonic::Response::new(ListDirectoryResponse {
-            entries: vec![],
-            status: Some(StatusCode {
-                success: false,
-                code: 0,
-                message: "No Success".to_string(),
-            }),
-        }))
+        match self.data_registry.list(&request_data.directory_path) {
+            Ok(files) => Ok(tonic::Response::new(ListDirectoryResponse {
+                entries: files,
+                status: Some(StatusCode {
+                    success: true,
+                    code: 0,
+                    message: "Success".to_string(),
+                }),
+            })),
+            Err(e) => Ok(tonic::Response::new(ListDirectoryResponse {
+                entries: vec![],
+                status: Some(StatusCode {
+                    success: false,
+                    code: 1,
+                    message: e.to_string(),
+                }),
+            })),
+        }
     }
 }

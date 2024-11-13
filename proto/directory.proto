@@ -3,14 +3,14 @@ syntax = "proto3";
 package cuddlyproto;
 
 import "auth.proto";
-import "file.proto";
+// import "file.proto";
 import "common.proto";
 
-message DirectoryEntry {
-  string name = 1;
-  bool is_directory = 2;
-  cuddlyproto.FileMetadata metadata = 3;
-}
+// message DirectoryEntry {
+//   string name = 1;
+//   bool is_directory = 2;
+//   cuddlyproto.FileMetadata metadata = 3;
+// }
 
 // Request to list directory contents
 message ListDirectoryRequest {
@@ -20,7 +20,7 @@ message ListDirectoryRequest {
 
 // Response containing directory entries
 message ListDirectoryResponse {
-  repeated DirectoryEntry entries = 1;
+  repeated string entries = 1;
   cuddlyproto.StatusCode status = 2;
 }
 
