@@ -2,6 +2,14 @@
 name = "cuddlyfs"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
+description = "A distributed file system with a cuddly API"
+repository = "https://github.com/niraj-kumar-r/cuddlyFS"
+readme = "README.md"
+keywords = ["distributed", "file", "system", "cuddly", "cuddlyfs"]
+categories = ["filesystems", "network-programming"]
+exclude = [".github/*", "Dockerfile.*", "compose.yaml", "README.Docker.md"]
+authors = ["Niraj Kumar"]
 
 [dependencies]
 bytes = "1.7.2"
