@@ -4,6 +4,7 @@ package cuddlyproto;
 
 import "auth.proto";
 import "common.proto";
+import "datanode.proto";
 
 message FileMetadata {
   int64 size = 1;
@@ -21,17 +22,18 @@ message OpenFileRequest {
   cuddlyproto.AuthToken auth_token = 1;
   string file_path = 2;
 
-  enum Mode {
-    READ = 0;
-    WRITE = 1;
-    READ_WRITE = 2;
-  }
-  Mode mode = 3;
+  // implement mode
+  // enum Mode {
+  //   READ = 0;
+  //   WRITE = 1;
+  //   READ_WRITE = 2;
+  // }
+  // Mode mode = 3;
 }
 
 // Response after opening a file
 message OpenFileResponse {
-  string file_handle = 1;
+  repeated BlockWithLocations blocks = 1;
   cuddlyproto.StatusCode status = 2;
 }
 
@@ -62,21 +64,23 @@ message WriteFileResponse {
   cuddlyproto.StatusCode status = 1;
 }
 
-// Request to close a file
-message CloseFileRequest {
-  cuddlyproto.AuthToken auth_token = 1;
-  string file_handle = 2;
+message CreateFileRequest {
+  string file_path = 1;
+  // cuddlyproto.AuthToken auth_token = 1;
+  // FileMetadata metadata = 3;
 }
 
-// Response after closing a file
-message CloseFileResponse {
-  cuddlyproto.StatusCode status = 1;
+message CreateFileResponse {
+  BlockWithTargets block_with_targets = 1;
+  // cuddlyproto.StatusCode status = 1;
 }
 
 // File service with file-related operations
 service FileService {
-  rpc OpenFile (OpenFileRequest) returns (OpenFileResponse);
-  rpc ReadFile (ReadFileRequest) returns (ReadFileResponse);
-  rpc WriteFile (WriteFileRequest) returns (WriteFileResponse);
-  rpc CloseFile (CloseFileRequest) returns (CloseFileResponse);
+  rpc open_file(OpenFileRequest) returns (OpenFileResponse);
+  rpc start_file_create(CreateFileRequest) returns (CreateFileResponse);
+  rpc finish_file_create(CreateFileRequest) returns (StatusCode);
+  // rpc abort_file_create(CreateFileRequest) returns (EmptyMessage);
+  // rpc add_block(AddBlockRequest) returns (BlockWithTargets);
+  // rpc abort_block_write(AbortBlockWriteRequest) returns (EmptyMessage);
 }

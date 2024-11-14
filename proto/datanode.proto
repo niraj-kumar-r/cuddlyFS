@@ -14,9 +14,21 @@ message DatanodeIDProto {
     uint32 infoSecurePort = 7;  // Datanode https port
 }
 
+message DatanodeInfo {
+    string ip_address = 1;
+    string datanode_uuid = 2;
+    uint64 total_capacity= 3;
+    uint64 used_capacity = 4;
+}
+
 message DatanodeRegistrationProto {
     DatanodeIDProto datanodeID = 1;    // Datanode information
     StorageInfoProto storageInfo = 2;  // Node information
     ExportedBlockKeysProto keys = 3;   // Block keys
     string softwareVersion = 4;        // Software version of the DN, e.g. "2.0.0"
+}
+
+message BlockWithTargets {
+    Block block = 1;
+    repeated DatanodeInfo targets = 2;
 }

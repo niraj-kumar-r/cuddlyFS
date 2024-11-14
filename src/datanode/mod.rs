@@ -1,6 +1,7 @@
 use crate::{
     config::APP_CONFIG,
     cuddlyproto::{self, heartbeat_service_client::HeartbeatServiceClient},
+    errors::CuddlyResult,
 };
 
 use chrono::Utc;
@@ -38,7 +39,7 @@ impl Datanode {
         }
     }
 
-    pub async fn run(self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run(self) -> CuddlyResult<()> {
         tokio::select! {
             _ = self.heartbeat_loop() => {},
             _ = self.cancel_token.cancelled() => {
@@ -50,7 +51,7 @@ impl Datanode {
         Ok(())
     }
 
-    async fn heartbeat_loop(&self) -> Result<(), Box<dyn std::error::Error>> {
+    async fn heartbeat_loop(&self) -> CuddlyResult<()> {
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(3));
         let mut consecutive_errors = 0;
 
@@ -74,16 +75,12 @@ impl Datanode {
         }
     }
 
-    async fn get_heartbeat_client(
-        uri: String,
-    ) -> Result<HeartbeatServiceClient<Channel>, Box<dyn std::error::Error>> {
+    async fn get_heartbeat_client(uri: String) -> CuddlyResult<HeartbeatServiceClient<Channel>> {
         let client = HeartbeatServiceClient::connect(uri).await?;
         Ok(client)
     }
 
-    pub async fn heartbeat(
-        &self,
-    ) -> Result<tonic::Response<cuddlyproto::HeartbeatResponse>, Box<dyn std::error::Error>> {
+    pub async fn heartbeat(&self) -> CuddlyResult<tonic::Response<cuddlyproto::HeartbeatResponse>> {
         let req = tonic::Request::new(cuddlyproto::HeartbeatRequest {
             registration: Some(cuddlyproto::DatanodeRegistrationProto {
                 datanode_id: Some(self.datanode_id.clone()),
