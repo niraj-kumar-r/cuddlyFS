@@ -14,7 +14,7 @@ message DatanodeIDProto {
     uint32 infoSecurePort = 7;  // Datanode https port
 }
 
-message DataNodeInfo {
+message DatanodeInfo {
     string ip_address = 1;
     string datanode_uuid = 2;
     uint64 total_capacity= 3;
@@ -30,5 +30,5 @@ message DatanodeRegistrationProto {
 
 message BlockWithTargets {
     Block block = 1;
-    repeated DataNodeInfo targets = 2;
+    repeated DatanodeInfo targets = 2;
 }

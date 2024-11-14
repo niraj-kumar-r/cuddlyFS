@@ -59,7 +59,19 @@ impl FileService for NamenodeFileService {
         request: Request<CreateFileRequest>,
     ) -> Result<Response<CreateFileResponse>, Status> {
         let request = request.into_inner();
+        let res = self.data_registry.start_file_create(&request.file_path);
 
-        Err(Status::invalid_argument("err.to_string()"))
+        match res {
+            Ok(Some((block, targets))) => Ok(Response::new(CreateFileResponse {
+                block_with_targets: Some(cuddlyproto::BlockWithTargets {
+                    block: Some(block.into()),
+                    targets: targets.into_iter().map(|target| target.into()).collect(),
+                }),
+            })),
+            Ok(None) => Err(Status::failed_precondition(
+                "Cannot create file, not enough avaialable datanodes with free space",
+            )),
+            Err(err) => Err(Status::invalid_argument(err.to_string())),
+        }
     }
 }

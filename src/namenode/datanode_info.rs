@@ -1,8 +1,11 @@
 use std::net::IpAddr;
 
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+use crate::cuddlyproto;
+
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub(crate) struct DatanodeInfo {
     pub(crate) ip_address: IpAddr,
     pub(crate) datanode_uuid: Uuid,
@@ -44,5 +47,51 @@ impl DatanodeInfo {
 
     pub(crate) fn free_capacity(&self) -> u64 {
         self.total_capacity - self.used_capacity
+    }
+}
+
+impl std::fmt::Display for DatanodeInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "DatanodeInfo {{ ip_address: {}, datanode_uuid: {}, total_capacity: {}, used_capacity: {} }}",
+            self.ip_address, self.datanode_uuid, self.total_capacity, self.used_capacity
+        )
+    }
+}
+
+impl From<cuddlyproto::DatanodeInfo> for DatanodeInfo {
+    fn from(value: cuddlyproto::DatanodeInfo) -> Self {
+        let cuddlyproto::DatanodeInfo {
+            ip_address,
+            datanode_uuid,
+            total_capacity,
+            used_capacity,
+        } = value;
+        Self {
+            ip_address: ip_address.parse().unwrap(),
+            datanode_uuid: Uuid::parse_str(&datanode_uuid).unwrap(),
+            total_capacity,
+            used_capacity,
+        }
+    }
+}
+
+impl From<DatanodeInfo> for cuddlyproto::DatanodeInfo {
+    fn from(value: DatanodeInfo) -> Self {
+        let DatanodeInfo {
+            ip_address,
+            datanode_uuid,
+            total_capacity,
+            used_capacity,
+        } = value;
+        let ip_address = ip_address.to_string();
+        let datanode_uuid = datanode_uuid.to_string();
+        Self {
+            ip_address,
+            datanode_uuid,
+            total_capacity,
+            used_capacity,
+        }
     }
 }

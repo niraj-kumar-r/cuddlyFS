@@ -299,7 +299,7 @@ impl DataRegistry {
                 .lock()
                 .unwrap()
                 .iter()
-                .map(|(uuid, instant)| datanode_to_blocks.get_data(uuid).unwrap().to_owned())
+                .map(|(uuid, _instant)| datanode_to_blocks.get_data(uuid).unwrap().to_owned())
                 .collect::<Vec<_>>()
         };
         available_nodes.shuffle(&mut thread_rng());
