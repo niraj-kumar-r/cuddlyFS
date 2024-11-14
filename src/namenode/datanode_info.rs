@@ -4,10 +4,10 @@ use uuid::Uuid;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub(crate) struct DatanodeInfo {
-    ip_address: IpAddr,
-    datanode_uuid: Uuid,
-    total_capacity: u64,
-    used_capacity: u64,
+    pub(crate) ip_address: IpAddr,
+    pub(crate) datanode_uuid: Uuid,
+    pub(crate) total_capacity: u64,
+    pub(crate) used_capacity: u64,
 }
 
 #[allow(dead_code)]

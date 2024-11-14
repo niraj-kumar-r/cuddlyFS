@@ -63,21 +63,16 @@ message WriteFileResponse {
   cuddlyproto.StatusCode status = 1;
 }
 
-// Request to close a file
-message CloseFileRequest {
-  cuddlyproto.AuthToken auth_token = 1;
-  string file_handle = 2;
-}
-
-// Response after closing a file
-message CloseFileResponse {
-  cuddlyproto.StatusCode status = 1;
+message CreateFileRequest {
+  string file_path = 1;
+  // cuddlyproto.AuthToken auth_token = 1;
+  // FileMetadata metadata = 3;
 }
 
 // File service with file-related operations
 service FileService {
   rpc open_file(OpenFileRequest) returns (OpenFileResponse);
-  // rpc start_file_create(CreateFileRequest) returns (BlockWithTargets);
+  // rpc start_file_create(CreateFileRequest) returns (BlockWithLocations);
   // rpc finish_file_create(CreateFileRequest) returns (EmptyMessage);
   // rpc abort_file_create(CreateFileRequest) returns (EmptyMessage);
   // rpc add_block(AddBlockRequest) returns (BlockWithTargets);

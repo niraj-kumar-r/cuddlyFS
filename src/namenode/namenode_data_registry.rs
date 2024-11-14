@@ -253,7 +253,7 @@ impl DataRegistry {
             .collect())
     }
 
-    pub(crate) fn open_file(&self, path: &str) -> CuddlyResult<Vec<(Block, Vec<Uuid>)>> {
+    pub(crate) fn open_file(&self, path: &str) -> CuddlyResult<Vec<(Block, Vec<DatanodeInfo>)>> {
         let fs_directory = self.fs_directory.read().unwrap();
         let file_blocks = fs_directory.open_file(path)?;
         let block_to_datanodes = self.block_to_datanodes.read().unwrap();
@@ -265,7 +265,14 @@ impl DataRegistry {
                     .get_ids_for_key(&block.id)
                     .expect("If file with block exists, then this block should be replicated")
                     .iter()
-                    .map(|s| s.to_owned())
+                    .map(|s| {
+                        self.datanode_to_blocks
+                            .read()
+                            .unwrap()
+                            .get_data(s)
+                            .expect("If block exists, then datanode should have it")
+                            .clone()
+                    })
                     .collect();
                 (*block, datanodes)
             })

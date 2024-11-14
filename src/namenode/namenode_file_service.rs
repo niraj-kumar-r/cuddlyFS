@@ -35,7 +35,7 @@ impl FileService for NamenodeFileService {
                         block: Some(block.into()),
                         locations: locations
                             .into_iter()
-                            .map(|location| location.to_string())
+                            .map(|location| location.ip_address.to_string())
                             .collect(),
                     })
                     .collect();
