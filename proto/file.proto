@@ -4,6 +4,7 @@ package cuddlyproto;
 
 import "auth.proto";
 import "common.proto";
+import "datanode.proto";
 
 message FileMetadata {
   int64 size = 1;
@@ -72,7 +73,7 @@ message CreateFileRequest {
 // File service with file-related operations
 service FileService {
   rpc open_file(OpenFileRequest) returns (OpenFileResponse);
-  // rpc start_file_create(CreateFileRequest) returns (BlockWithLocations);
+  rpc start_file_create(CreateFileRequest) returns (BlockWithTargets);
   // rpc finish_file_create(CreateFileRequest) returns (EmptyMessage);
   // rpc abort_file_create(CreateFileRequest) returns (EmptyMessage);
   // rpc add_block(AddBlockRequest) returns (BlockWithTargets);
