@@ -3,7 +3,8 @@ use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
 use crate::cuddlyproto::{
-    self, file_service_server::FileService, OpenFileRequest, OpenFileResponse,
+    self, file_service_server::FileService, CreateFileRequest, CreateFileResponse, OpenFileRequest,
+    OpenFileResponse,
 };
 
 use super::namenode_data_registry::DataRegistry;
@@ -51,5 +52,14 @@ impl FileService for NamenodeFileService {
             }
             Err(err) => Err(Status::invalid_argument(err.to_string())),
         }
+    }
+
+    async fn start_file_create(
+        &self,
+        request: Request<CreateFileRequest>,
+    ) -> Result<Response<CreateFileResponse>, Status> {
+        let request = request.into_inner();
+
+        Err(Status::invalid_argument("err.to_string()"))
     }
 }

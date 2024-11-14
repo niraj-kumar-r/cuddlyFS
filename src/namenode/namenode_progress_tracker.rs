@@ -70,8 +70,22 @@ impl NamenodeProgressTracker {
     }
 
     /// Checks if the given block ID is being tracked.
-    pub(crate) fn contains_block(&self, block_id: Uuid) -> bool {
-        self.block_to_replication_count.contains_key(&block_id)
+    pub(crate) fn contains_block(&self, block_id: &Uuid) -> bool {
+        self.block_to_replication_count.contains_key(block_id)
+    }
+
+    pub(crate) fn add_block(&mut self, filename: &str, block_id: Uuid) -> CuddlyResult<()> {
+        let blocks = self.filename_to_blocks.get_mut(filename);
+        if let Some(blocks) = blocks {
+            blocks.push(block_id);
+            self.block_to_replication_count.insert(block_id, 0);
+            Ok(())
+        } else {
+            Err(CuddlyError::FSError(format!(
+                "'{}': File creation has not started yet",
+                filename
+            )))
+        }
     }
 
     /// Removes a block from the specified file. Returns an error if the file does not exist.

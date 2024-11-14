@@ -70,10 +70,15 @@ message CreateFileRequest {
   // FileMetadata metadata = 3;
 }
 
+message CreateFileResponse {
+  BlockWithTargets block_with_targets = 1;
+  // cuddlyproto.StatusCode status = 1;
+}
+
 // File service with file-related operations
 service FileService {
   rpc open_file(OpenFileRequest) returns (OpenFileResponse);
-  rpc start_file_create(CreateFileRequest) returns (BlockWithTargets);
+  rpc start_file_create(CreateFileRequest) returns (CreateFileResponse);
   // rpc finish_file_create(CreateFileRequest) returns (EmptyMessage);
   // rpc abort_file_create(CreateFileRequest) returns (EmptyMessage);
   // rpc add_block(AddBlockRequest) returns (BlockWithTargets);

@@ -26,6 +26,8 @@ pub struct AppConfig {
     pub debug: bool,
     pub namenode: NamenodeConfig,
     pub datanode: DatanodeConfig,
+    pub block_size: u64,
+    pub replication_factor: u8,
 }
 
 impl AppConfig {
@@ -49,6 +51,8 @@ impl Default for AppConfig {
             debug: false,
             namenode: NamenodeConfig::default(),
             datanode: DatanodeConfig::default(),
+            block_size: 64 * 1024 * 1024,
+            replication_factor: 3,
         }
     }
 }

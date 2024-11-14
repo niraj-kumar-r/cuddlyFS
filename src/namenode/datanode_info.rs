@@ -41,4 +41,8 @@ impl DatanodeInfo {
     pub(crate) fn used_capacity(&self) -> u64 {
         self.used_capacity
     }
+
+    pub(crate) fn free_capacity(&self) -> u64 {
+        self.total_capacity - self.used_capacity
+    }
 }

@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     num::NonZero,
     sync::{Mutex, RwLock},
 };
@@ -6,6 +7,7 @@ use std::{
 use chrono::{DateTime, Utc};
 use log::info;
 use lru::LruCache;
+use rand::{seq::SliceRandom, thread_rng};
 use tokio::time;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
@@ -62,7 +64,7 @@ const HEARTBEAT_RECHECK_INTERVAL: u64 = 20;
 #[allow(dead_code)]
 pub(super) struct DataRegistry {
     start_time: DateTime<Utc>,
-    heartbeat_cache: Mutex<LruCache<String, DateTime<Utc>>>,
+    heartbeat_cache: Mutex<LruCache<Uuid, DateTime<Utc>>>,
     cancel_token: CancellationToken,
     block_to_datanodes: RwLock<KeyToDataAndIdMap<Uuid, Block, Uuid>>,
     datanode_to_blocks: RwLock<KeyToDataAndIdMap<Uuid, DatanodeInfo, Uuid>>,
@@ -120,7 +122,7 @@ impl DataRegistry {
                 .heartbeat_cache
                 .lock()
                 .unwrap()
-                .put(uuid.clone(), Utc::now());
+                .put(Uuid::parse_str(&uuid).unwrap(), Utc::now());
 
             match r {
                 Some(previous_instant) => {
@@ -277,5 +279,63 @@ impl DataRegistry {
                 (*block, datanodes)
             })
             .collect())
+    }
+
+    pub(crate) fn start_file_create(
+        &self,
+        path: &str,
+    ) -> CuddlyResult<Option<(Block, Vec<DatanodeInfo>)>> {
+        let fs_directory = self.fs_directory.read().unwrap();
+        fs_directory.check_file_creation(path)?;
+        self.namenode_progress_tracker
+            .write()
+            .unwrap()
+            .add_file(path.to_owned())?;
+
+        let mut target_nodes = HashSet::new();
+        let mut available_nodes = {
+            let datanode_to_blocks = self.datanode_to_blocks.read().unwrap();
+            self.heartbeat_cache
+                .lock()
+                .unwrap()
+                .iter()
+                .map(|(uuid, instant)| datanode_to_blocks.get_data(uuid).unwrap().to_owned())
+                .collect::<Vec<_>>()
+        };
+        available_nodes.shuffle(&mut thread_rng());
+
+        for node_info in available_nodes {
+            if node_info.free_capacity() > APP_CONFIG.block_size {
+                target_nodes.insert(node_info);
+            }
+            if target_nodes.len() as u64 >= APP_CONFIG.replication_factor as u64 {
+                let block_id = self.next_block_id();
+                let block = Block::new(block_id, 0);
+                let mut blocks = HashSet::new();
+                blocks.insert(block);
+                self.namenode_progress_tracker
+                    .write()
+                    .unwrap()
+                    .add_block(path, block_id)?;
+                return Ok(Some((block, target_nodes.into_iter().collect())));
+            }
+        }
+
+        Ok(None)
+    }
+
+    fn next_block_id(&self) -> Uuid {
+        let block_to_datanodes = self.block_to_datanodes.read().unwrap();
+        let creates_in_progress = self.namenode_progress_tracker.read().unwrap();
+        loop {
+            let block_id = uuid::Uuid::new_v4();
+            if block_to_datanodes.contains_key(&block_id)
+                || creates_in_progress.contains_block(&block_id)
+            {
+                continue;
+            } else {
+                return block_id;
+            }
+        }
     }
 }

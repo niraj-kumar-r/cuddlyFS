@@ -6,3 +6,7 @@ namenode:
 
 datanode:
     namenode_rpc_address: "http://[::1]:50051"
+
+# 64 * 1024 * 1024
+block_size: 67108864
+replication_fator: 3
