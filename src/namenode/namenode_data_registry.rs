@@ -252,4 +252,23 @@ impl DataRegistry {
             .map(|s| String::from(*s))
             .collect())
     }
+
+    pub(crate) fn open_file(&self, path: &str) -> CuddlyResult<Vec<(Block, Vec<Uuid>)>> {
+        let fs_directory = self.fs_directory.read().unwrap();
+        let file_blocks = fs_directory.open_file(path)?;
+        let block_to_datanodes = self.block_to_datanodes.read().unwrap();
+
+        Ok(file_blocks
+            .iter()
+            .map(|block| {
+                let datanodes = block_to_datanodes
+                    .get_ids_for_key(&block.id)
+                    .expect("If file with block exists, then this block should be replicated")
+                    .iter()
+                    .map(|s| s.to_owned())
+                    .collect();
+                (*block, datanodes)
+            })
+            .collect())
+    }
 }

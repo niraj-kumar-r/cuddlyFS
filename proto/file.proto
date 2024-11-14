@@ -32,9 +32,8 @@ message OpenFileRequest {
 
 // Response after opening a file
 message OpenFileResponse {
-  Block block = 1;
-  string locations = 2;
-  cuddlyproto.StatusCode status = 3;
+  repeated BlockWithLocations blocks = 1;
+  cuddlyproto.StatusCode status = 2;
 }
 
 // Request to read from a file
