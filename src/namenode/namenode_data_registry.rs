@@ -23,7 +23,7 @@ use crate::{
 use super::{
     datanode_info::DatanodeInfo,
     namenode_operation_logger::{EditOperation, OperationLogger},
-    namenode_progress_tracker::{self, NamenodeProgressTracker},
+    namenode_progress_tracker::NamenodeProgressTracker,
     namenode_state::NamenodeState,
 };
 
