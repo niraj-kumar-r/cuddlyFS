@@ -2,10 +2,15 @@ use std::sync::Arc;
 
 use tonic::{Request, Response, Status};
 
-use crate::cuddlyproto::{
-    self, file_service_server::FileService, CreateFileRequest, CreateFileResponse, OpenFileRequest,
-    OpenFileResponse,
+use crate::{
+    cuddlyproto::{
+        self, file_service_server::FileService, CreateFileRequest, CreateFileResponse,
+        OpenFileRequest, OpenFileResponse,
+    },
+    errors::CuddlyError,
 };
+
+use self::cuddlyproto::StatusCode;
 
 use super::namenode_data_registry::DataRegistry;
 
@@ -71,6 +76,26 @@ impl FileService for NamenodeFileService {
             Ok(None) => Err(Status::failed_precondition(
                 "Cannot create file, not enough avaialable datanodes with free space",
             )),
+            Err(err) => Err(Status::invalid_argument(err.to_string())),
+        }
+    }
+
+    async fn finish_file_create(
+        &self,
+        request: Request<CreateFileRequest>,
+    ) -> Result<Response<StatusCode>, Status> {
+        let request = request.into_inner();
+        match self
+            .data_registry
+            .finish_file_create(&request.file_path)
+            .await
+        {
+            Ok(()) => Ok(Response::new(StatusCode {
+                success: true,
+                code: cuddlyproto::StatusEnum::Ok as i32,
+                message: "File created successfully".to_string(),
+            })),
+            Err(CuddlyError::WaitingForReplication(err)) => Err(Status::unavailable(err)),
             Err(err) => Err(Status::invalid_argument(err.to_string())),
         }
     }

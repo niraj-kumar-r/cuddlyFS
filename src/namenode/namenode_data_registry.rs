@@ -23,7 +23,7 @@ use crate::{
 use super::{
     datanode_info::DatanodeInfo,
     namenode_operation_logger::{EditOperation, OperationLogger},
-    namenode_progress_tracker::NamenodeProgressTracker,
+    namenode_progress_tracker::{self, NamenodeProgressTracker},
     namenode_state::NamenodeState,
 };
 
@@ -337,5 +337,45 @@ impl DataRegistry {
                 return block_id;
             }
         }
+    }
+
+    pub(crate) async fn finish_file_create(&self, path: &str) -> CuddlyResult<()> {
+        let blocks = self.internal_finish_file_create(path)?;
+        self.non_logging_finish_file(path, blocks.as_slice())?;
+        self.log_operation(EditOperation::AddFile(path.to_owned(), blocks))
+            .await;
+
+        Ok(())
+    }
+
+    fn internal_finish_file_create(&self, path: &str) -> CuddlyResult<Vec<Block>> {
+        let namenode_progress_tracker = self.namenode_progress_tracker.read().unwrap();
+        let block_ids = namenode_progress_tracker.get_block_ids(path)?;
+        for block_id in block_ids {
+            let replication_count = namenode_progress_tracker.get_replication_count(*block_id);
+            if replication_count < APP_CONFIG.replication_factor as u64 {
+                return Err(CuddlyError::WaitingForReplication(format!(
+                    "Block {} has been replicated only {} times, but {} replications are required",
+                    block_id, replication_count, APP_CONFIG.replication_factor,
+                )));
+            }
+        }
+
+        let block_to_datanodes = self.block_to_datanodes.read().unwrap();
+        let blocks = block_ids
+            .iter()
+            .map(|id| block_to_datanodes.get_data(id).unwrap().to_owned())
+            .collect();
+        Ok(blocks)
+    }
+
+    fn non_logging_finish_file(&self, path: &str, blocks: &[Block]) -> CuddlyResult<()> {
+        let mut fs_directory = self.fs_directory.write().unwrap();
+        fs_directory.create_file(path, blocks)?;
+        let mut block_to_datanodes = self.block_to_datanodes.write().unwrap();
+        for block in blocks {
+            block_to_datanodes.insert_data(block.id, *block);
+        }
+        Ok(())
     }
 }

@@ -79,7 +79,7 @@ message CreateFileResponse {
 service FileService {
   rpc open_file(OpenFileRequest) returns (OpenFileResponse);
   rpc start_file_create(CreateFileRequest) returns (CreateFileResponse);
-  // rpc finish_file_create(CreateFileRequest) returns (EmptyMessage);
+  rpc finish_file_create(CreateFileRequest) returns (StatusCode);
   // rpc abort_file_create(CreateFileRequest) returns (EmptyMessage);
   // rpc add_block(AddBlockRequest) returns (BlockWithTargets);
   // rpc abort_block_write(AbortBlockWriteRequest) returns (EmptyMessage);
