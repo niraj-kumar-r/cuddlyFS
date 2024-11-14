@@ -7,7 +7,7 @@ description = "A distributed file system with a cuddly API"
 repository = "https://github.com/niraj-kumar-r/cuddlyFS"
 readme = "README.md"
 keywords = ["distributed", "file", "system", "cuddly", "cuddlyfs"]
-categories = ["filesystems", "network-programming"]
+categories = ["filesystem", "network-programming"]
 exclude = [".github/*", "Dockerfile.*", "compose.yaml", "README.Docker.md"]
 authors = ["Niraj Kumar"]
 
