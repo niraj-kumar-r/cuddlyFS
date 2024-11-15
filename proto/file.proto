@@ -56,6 +56,11 @@ message AddBlockResponse {
   BlockWithTargets block_with_targets = 1;
 }
 
+message AbortBlockWriteRequest {
+  Block block = 1;
+  string path = 2;
+}
+
 // File service with file-related operations
 service FileService {
   rpc open_file(OpenFileRequest) returns (OpenFileResponse);
@@ -63,5 +68,5 @@ service FileService {
   rpc finish_file_create(CreateFileRequest) returns (StatusCode);
   rpc abort_file_create(CreateFileRequest) returns (StatusCode);
   rpc add_block(AddBlockRequest) returns (AddBlockResponse);
-  // rpc abort_block_write(AbortBlockWriteRequest) returns (EmptyMessage);
+  rpc abort_block_write(AbortBlockWriteRequest) returns (StatusCode);
 }

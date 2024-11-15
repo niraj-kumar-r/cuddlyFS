@@ -10,7 +10,7 @@ use crate::{
     errors::CuddlyError,
 };
 
-use self::cuddlyproto::{AddBlockRequest, AddBlockResponse, StatusCode};
+use self::cuddlyproto::{AbortBlockWriteRequest, AddBlockRequest, AddBlockResponse, StatusCode};
 
 use super::namenode_data_registry::DataRegistry;
 
@@ -140,6 +140,22 @@ impl FileService for NamenodeFileService {
                 "Unable to create another block: insufficient available datanodes with free space",
             )),
             Err(CuddlyError::WaitingForReplication(err)) => Err(Status::unavailable(err)),
+            Err(err) => Err(Status::invalid_argument(err.to_string())),
+        }
+    }
+
+    async fn abort_block_write(
+        &self,
+        request: Request<AbortBlockWriteRequest>,
+    ) -> Result<Response<StatusCode>, Status> {
+        let request = request.into_inner();
+        let block = request.block.unwrap().into();
+        match self.data_registry.abort_block(&request.path, &block) {
+            Ok(()) => Ok(Response::new(StatusCode {
+                success: true,
+                code: cuddlyproto::StatusEnum::Ok as i32,
+                message: "Block write aborted".to_string(),
+            })),
             Err(err) => Err(Status::invalid_argument(err.to_string())),
         }
     }

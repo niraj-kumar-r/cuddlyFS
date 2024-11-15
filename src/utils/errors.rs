@@ -3,7 +3,6 @@ use std::fmt::{Display, Formatter};
 use config;
 
 #[derive(Debug, PartialEq)]
-#[allow(dead_code)]
 pub enum CuddlyError {
     IOError(String),
     RPCError(String),

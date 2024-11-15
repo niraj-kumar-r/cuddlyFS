@@ -23,7 +23,7 @@ use crate::{
 use super::{
     datanode_info::DatanodeInfo,
     namenode_operation_logger::{EditOperation, OperationLogger},
-    namenode_progress_tracker::{self, NamenodeProgressTracker},
+    namenode_progress_tracker::NamenodeProgressTracker,
     namenode_state::NamenodeState,
 };
 
@@ -61,9 +61,7 @@ const HEARTBEAT_RECHECK_INTERVAL: u64 = 20;
  * 5)  LRU cache of updated-heartbeat machines
  */
 #[derive(Debug)]
-#[allow(dead_code)]
 pub(super) struct DataRegistry {
-    start_time: DateTime<Utc>,
     heartbeat_cache: Mutex<LruCache<Uuid, DateTime<Utc>>>,
     cancel_token: CancellationToken,
     block_to_datanodes: RwLock<KeyToDataAndIdMap<Uuid, Block, Uuid>>,
@@ -71,6 +69,7 @@ pub(super) struct DataRegistry {
     namenode_progress_tracker: RwLock<NamenodeProgressTracker>,
     fs_directory: RwLock<NamenodeState>,
     operation_logger: tokio::sync::Mutex<OperationLogger>,
+    // start_time: DateTime<Utc>,
     // fsname_to_blocks: HashMap<FsName, BlockList>,
     // valid_blocks: HashSet<Block>,
     // block_manager: BlockManager,
@@ -81,7 +80,7 @@ pub(super) struct DataRegistry {
 impl DataRegistry {
     pub(super) fn new(cancel_token: CancellationToken) -> CuddlyResult<Self> {
         let data_registry = Self {
-            start_time: Utc::now(),
+            // start_time: Utc::now(),
             heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
             block_to_datanodes: RwLock::new(KeyToDataAndIdMap::new()),
             datanode_to_blocks: RwLock::new(KeyToDataAndIdMap::new()),
@@ -438,5 +437,11 @@ impl DataRegistry {
         }
 
         Ok(None)
+    }
+
+    pub(crate) fn abort_block(&self, path: &str, block: &Block) -> CuddlyResult<()> {
+        let mut namenode_progress_tracker = self.namenode_progress_tracker.write().unwrap();
+        namenode_progress_tracker.remove_block(path, block.id)?;
+        Ok(())
     }
 }
