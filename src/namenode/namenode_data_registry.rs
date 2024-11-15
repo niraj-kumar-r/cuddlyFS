@@ -384,4 +384,59 @@ impl DataRegistry {
         namenode_progress_tracker.remove_file(path)?;
         Ok(())
     }
+
+    fn check_all_blocks_replicated(&self, path: &str) -> CuddlyResult<()> {
+        let namenode_progress_tracker = self.namenode_progress_tracker.read().unwrap();
+        let block_ids = namenode_progress_tracker.get_block_ids(path)?;
+        for block_id in block_ids {
+            let replication_count = self
+                .namenode_progress_tracker
+                .read()
+                .unwrap()
+                .get_replication_count(*block_id);
+            if replication_count < APP_CONFIG.replication_factor as u64 {
+                return Err(CuddlyError::WaitingForReplication(format!(
+                    "Block {} has been replicated only {} times, but {} replications are required",
+                    block_id, replication_count, APP_CONFIG.replication_factor,
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn start_another_block(
+        &self,
+        path: &str,
+    ) -> CuddlyResult<Option<(Block, Vec<DatanodeInfo>)>> {
+        self.check_all_blocks_replicated(path)?;
+
+        let mut target_nodes = HashSet::new();
+        let mut available_nodes = {
+            let datanode_to_blocks = self.datanode_to_blocks.read().unwrap();
+            self.heartbeat_cache
+                .lock()
+                .unwrap()
+                .iter()
+                .map(|(uuid, _instant)| datanode_to_blocks.get_data(uuid).unwrap().to_owned())
+                .collect::<Vec<_>>()
+        };
+        available_nodes.shuffle(&mut thread_rng());
+
+        for node_info in available_nodes {
+            if node_info.free_capacity() > APP_CONFIG.block_size {
+                target_nodes.insert(node_info);
+            }
+            if target_nodes.len() as u64 >= APP_CONFIG.replication_factor as u64 {
+                let block_id = self.next_block_id();
+                let block = Block::new(block_id, 0);
+                self.namenode_progress_tracker
+                    .write()
+                    .unwrap()
+                    .add_block(path, block_id)?;
+                return Ok(Some((block, target_nodes.into_iter().collect())));
+            }
+        }
+
+        Ok(None)
+    }
 }
