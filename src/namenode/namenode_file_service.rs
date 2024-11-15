@@ -4,13 +4,12 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     cuddlyproto::{
-        self, file_service_server::FileService, CreateFileRequest, CreateFileResponse,
-        OpenFileRequest, OpenFileResponse,
+        self, file_service_server::FileService, AbortBlockWriteRequest, AddBlockRequest,
+        AddBlockResponse, CreateFileRequest, CreateFileResponse, OpenFileRequest, OpenFileResponse,
+        StatusCode,
     },
     errors::CuddlyError,
 };
-
-use self::cuddlyproto::{AbortBlockWriteRequest, AddBlockRequest, AddBlockResponse, StatusCode};
 
 use super::namenode_data_registry::DataRegistry;
 
