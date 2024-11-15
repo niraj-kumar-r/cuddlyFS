@@ -99,4 +99,19 @@ impl FileService for NamenodeFileService {
             Err(err) => Err(Status::invalid_argument(err.to_string())),
         }
     }
+
+    async fn abort_file_create(
+        &self,
+        request: Request<CreateFileRequest>,
+    ) -> Result<Response<StatusCode>, Status> {
+        let request = request.into_inner();
+        match self.data_registry.abort_file_create(&request.file_path) {
+            Ok(()) => Ok(Response::new(StatusCode {
+                success: true,
+                code: cuddlyproto::StatusEnum::Ok as i32,
+                message: "File creation aborted".to_string(),
+            })),
+            Err(err) => Err(Status::invalid_argument(err.to_string())),
+        }
+    }
 }

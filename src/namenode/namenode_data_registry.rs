@@ -23,7 +23,7 @@ use crate::{
 use super::{
     datanode_info::DatanodeInfo,
     namenode_operation_logger::{EditOperation, OperationLogger},
-    namenode_progress_tracker::NamenodeProgressTracker,
+    namenode_progress_tracker::{self, NamenodeProgressTracker},
     namenode_state::NamenodeState,
 };
 
@@ -376,6 +376,12 @@ impl DataRegistry {
         for block in blocks {
             block_to_datanodes.insert_data(block.id, *block);
         }
+        Ok(())
+    }
+
+    pub(crate) fn abort_file_create(&self, path: &str) -> CuddlyResult<()> {
+        let mut namenode_progress_tracker = self.namenode_progress_tracker.write().unwrap();
+        namenode_progress_tracker.remove_file(path)?;
         Ok(())
     }
 }
