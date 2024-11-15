@@ -6,7 +6,6 @@ use std::collections::HashMap;
 const ALLOWED_CHARACTERS: &str = "=-_";
 
 #[derive(Debug)]
-#[allow(dead_code)]
 enum IndexTreeNode {
     Directory {
         name: String,
@@ -18,7 +17,6 @@ enum IndexTreeNode {
     },
 }
 
-#[allow(dead_code)]
 impl IndexTreeNode {
     fn add_directory(&mut self, name: &str) -> CuddlyResult<&mut IndexTreeNode> {
         match self {
@@ -61,7 +59,6 @@ pub struct NamenodeState {
     root: IndexTreeNode,
 }
 
-#[allow(dead_code)]
 impl NamenodeState {
     pub fn new() -> Self {
         Self {

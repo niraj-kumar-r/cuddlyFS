@@ -37,33 +37,6 @@ message OpenFileResponse {
   cuddlyproto.StatusCode status = 2;
 }
 
-// Request to read from a file
-message ReadFileRequest {
-  cuddlyproto.AuthToken auth_token = 1;
-  string file_handle = 2;
-  int64 offset = 3;
-  int64 size = 4;
-}
-
-// Response containing read data
-message ReadFileResponse {
-  bytes data = 1;
-  cuddlyproto.StatusCode status = 2;
-}
-
-// Request to write to a file
-message WriteFileRequest {
-  cuddlyproto.AuthToken auth_token = 1;
-  string file_handle = 2;
-  int64 offset = 3;
-  bytes data = 4;
-}
-
-// Response after writing to a file
-message WriteFileResponse {
-  cuddlyproto.StatusCode status = 1;
-}
-
 message CreateFileRequest {
   string file_path = 1;
   // cuddlyproto.AuthToken auth_token = 1;
@@ -75,12 +48,25 @@ message CreateFileResponse {
   // cuddlyproto.StatusCode status = 1;
 }
 
+message AddBlockRequest {
+  string path = 1;
+}
+
+message AddBlockResponse {
+  BlockWithTargets block_with_targets = 1;
+}
+
+message AbortBlockWriteRequest {
+  Block block = 1;
+  string path = 2;
+}
+
 // File service with file-related operations
 service FileService {
   rpc open_file(OpenFileRequest) returns (OpenFileResponse);
   rpc start_file_create(CreateFileRequest) returns (CreateFileResponse);
   rpc finish_file_create(CreateFileRequest) returns (StatusCode);
-  // rpc abort_file_create(CreateFileRequest) returns (EmptyMessage);
-  // rpc add_block(AddBlockRequest) returns (BlockWithTargets);
-  // rpc abort_block_write(AbortBlockWriteRequest) returns (EmptyMessage);
+  rpc abort_file_create(CreateFileRequest) returns (StatusCode);
+  rpc add_block(AddBlockRequest) returns (AddBlockResponse);
+  rpc abort_block_write(AbortBlockWriteRequest) returns (StatusCode);
 }

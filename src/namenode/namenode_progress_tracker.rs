@@ -10,7 +10,6 @@ pub(crate) struct NamenodeProgressTracker {
     block_to_replication_count: HashMap<Uuid, u64>,
 }
 
-#[allow(dead_code)]
 impl NamenodeProgressTracker {
     pub(crate) fn new() -> Self {
         Self {
