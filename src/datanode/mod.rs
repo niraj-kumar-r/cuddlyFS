@@ -3,7 +3,7 @@ use std::{path::PathBuf, sync::Arc};
 use crate::{
     config::APP_CONFIG,
     cuddlyproto::{self},
-    errors::CuddlyResult,
+    errors::{CuddlyError, CuddlyResult},
 };
 
 use chrono::Utc;
@@ -23,13 +23,13 @@ mod datanode_disk_info;
 pub struct Datanode {
     pub datanode_id: cuddlyproto::DatanodeIdProto,
     datanode_data_registry: Arc<datanode_data_registry::DatanodeDataRegistry>,
-    node_service_client: Option<NodeServiceClient<Channel>>,
+    node_service_client: NodeServiceClient<Channel>,
     cancel_token: CancellationToken,
     shutdown_send: mpsc::UnboundedSender<i8>,
 }
 
 impl Datanode {
-    pub fn new(
+    pub async fn new(
         cancel_token: CancellationToken,
         shutdown_send: mpsc::UnboundedSender<i8>,
     ) -> CuddlyResult<Self> {
@@ -54,7 +54,13 @@ impl Datanode {
                     datanode_uuid
                 )),
             )?),
-            node_service_client: None,
+            node_service_client: NodeServiceClient::connect(
+                APP_CONFIG.datanode.namenode_rpc_address.clone(),
+            )
+            .await
+            .map_err(|err| {
+                CuddlyError::RPCError(format!("Could not connect to namenode: {}", err))
+            })?,
             cancel_token,
             shutdown_send,
         })
@@ -73,17 +79,7 @@ impl Datanode {
     }
 
     async fn get_node_service_client(&self) -> CuddlyResult<NodeServiceClient<Channel>> {
-        match &self.node_service_client {
-            Some(client) => Ok(client.clone()),
-            None => {
-                let client =
-                    NodeServiceClient::connect(APP_CONFIG.datanode.namenode_rpc_address.clone())
-                        .await?;
-                let mut this = self.clone();
-                this.node_service_client = Some(client.clone());
-                Ok(client)
-            }
-        }
+        Ok(self.node_service_client.clone())
     }
 
     async fn heartbeat_loop(&self) -> CuddlyResult<()> {

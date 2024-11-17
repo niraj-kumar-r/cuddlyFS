@@ -12,7 +12,7 @@ async fn main() -> CuddlyResult<()> {
 
     let (shutdown_send, mut shutdown_recv) = mpsc::unbounded_channel::<i8>();
     let cancel_token: CancellationToken = CancellationToken::new();
-    let datanode: Datanode = Datanode::new(cancel_token.clone(), shutdown_send)?;
+    let datanode: Datanode = Datanode::new(cancel_token.clone(), shutdown_send).await?;
 
     let running_datanode_handle = tokio::spawn(async move {
         let _ = datanode.run().await;
