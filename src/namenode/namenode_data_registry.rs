@@ -233,6 +233,20 @@ impl DataRegistry {
         edit_logger.log_operation(&op).await;
     }
 
+    pub(crate) fn report_datanodes(&self) -> CuddlyResult<Vec<DatanodeInfo>> {
+        Ok(self.get_alive_datanodes())
+    }
+
+    fn get_alive_datanodes(&self) -> Vec<DatanodeInfo> {
+        let datanode_to_blocks = self.datanode_to_blocks.read().unwrap();
+        self.heartbeat_cache
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(uuid, _instant)| datanode_to_blocks.get_data(uuid).unwrap().to_owned())
+            .collect::<Vec<_>>()
+    }
+
     pub(crate) async fn make_dir(&self, path: &str) -> CuddlyResult<()> {
         self.non_logging_make_dir(path)?;
         self.log_operation(EditOperation::Mkdir(path.to_owned()))
@@ -292,15 +306,7 @@ impl DataRegistry {
             .add_file(path.to_owned())?;
 
         let mut target_nodes = HashSet::new();
-        let mut available_nodes = {
-            let datanode_to_blocks = self.datanode_to_blocks.read().unwrap();
-            self.heartbeat_cache
-                .lock()
-                .unwrap()
-                .iter()
-                .map(|(uuid, _instant)| datanode_to_blocks.get_data(uuid).unwrap().to_owned())
-                .collect::<Vec<_>>()
-        };
+        let mut available_nodes = self.get_alive_datanodes();
         available_nodes.shuffle(&mut thread_rng());
 
         for node_info in available_nodes {
@@ -410,15 +416,7 @@ impl DataRegistry {
         self.check_all_blocks_replicated(path)?;
 
         let mut target_nodes = HashSet::new();
-        let mut available_nodes = {
-            let datanode_to_blocks = self.datanode_to_blocks.read().unwrap();
-            self.heartbeat_cache
-                .lock()
-                .unwrap()
-                .iter()
-                .map(|(uuid, _instant)| datanode_to_blocks.get_data(uuid).unwrap().to_owned())
-                .collect::<Vec<_>>()
-        };
+        let mut available_nodes = self.get_alive_datanodes();
         available_nodes.shuffle(&mut thread_rng());
 
         for node_info in available_nodes {

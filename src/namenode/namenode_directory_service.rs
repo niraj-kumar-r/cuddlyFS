@@ -4,7 +4,8 @@ use tonic::Request;
 
 use crate::cuddlyproto::{
     directory_service_server::DirectoryService, CreateDirectoryRequest, CreateDirectoryResponse,
-    ListDirectoryRequest, ListDirectoryResponse, StatusCode,
+    ListDirectoryRequest, ListDirectoryResponse, ReportDatanodesRequest, ReportDatanodesResponse,
+    StatusCode,
 };
 
 use super::namenode_data_registry::DataRegistry;
@@ -21,6 +22,18 @@ impl NamenodeDirectoryService {
 
 #[tonic::async_trait]
 impl DirectoryService for NamenodeDirectoryService {
+    async fn report_datanodes(
+        &self,
+        _request: Request<ReportDatanodesRequest>,
+    ) -> Result<tonic::Response<ReportDatanodesResponse>, tonic::Status> {
+        match self.data_registry.report_datanodes() {
+            Ok(dat) => Ok(tonic::Response::new(ReportDatanodesResponse {
+                datanodes: dat.iter().map(|d| d.clone().into()).collect(),
+            })),
+            Err(e) => Err(tonic::Status::internal(e.to_string())),
+        }
+    }
+
     async fn create_directory(
         &self,
         request: Request<CreateDirectoryRequest>,

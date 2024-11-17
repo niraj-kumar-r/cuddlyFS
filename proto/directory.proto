@@ -3,8 +3,8 @@ syntax = "proto3";
 package cuddlyproto;
 
 import "auth.proto";
-// import "file.proto";
 import "common.proto";
+import "datanode.proto";
 
 // message DirectoryEntry {
 //   string name = 1;
@@ -47,8 +47,17 @@ message DeleteDirectoryResponse {
   cuddlyproto.StatusCode status = 1;
 }
 
+message ReportDatanodesRequest {
+  cuddlyproto.StatusCode status = 1;
+}
+
+message ReportDatanodesResponse {
+  repeated DatanodeInfo datanodes = 1;
+}
+
 // Directory service with directory-related operations
 service DirectoryService {
+  rpc ReportDatanodes(ReportDatanodesRequest) returns (ReportDatanodesResponse);
   rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryResponse);
   rpc CreateDirectory (CreateDirectoryRequest) returns (CreateDirectoryResponse);
   // rpc DeleteDirectory (DeleteDirectoryRequest) returns (DeleteDirectoryResponse);

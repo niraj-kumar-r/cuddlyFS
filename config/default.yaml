@@ -9,5 +9,6 @@ datanode:
     data_dir: "/tmp/cuddlyfs/datanode"
     disk_check_interval: 3000
 
+packet_size: 65536
 block_size: 67108864
 replication_factor: 3

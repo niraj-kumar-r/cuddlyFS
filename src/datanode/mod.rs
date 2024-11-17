@@ -26,9 +26,12 @@ pub struct Datanode {
 }
 
 impl Datanode {
-    pub fn new(cancel_token: CancellationToken, shutdown_send: mpsc::UnboundedSender<i8>) -> Self {
+    pub fn new(
+        cancel_token: CancellationToken,
+        shutdown_send: mpsc::UnboundedSender<i8>,
+    ) -> CuddlyResult<Self> {
         let datanode_uuid = Uuid::new_v4();
-        Datanode {
+        Ok(Datanode {
             datanode_id: cuddlyproto::DatanodeIdProto {
                 ip_addr: local_ip().unwrap().to_string(),
                 host_name: hostname::get()
@@ -41,17 +44,16 @@ impl Datanode {
                 ipc_port: 50020,
                 info_secure_port: 50070,
             },
-            datanode_data_registry: Arc::new(
-                datanode_data_registry::DatanodeDataRegistry::new(&PathBuf::from(format!(
+            datanode_data_registry: Arc::new(datanode_data_registry::DatanodeDataRegistry::new(
+                &PathBuf::from(format!(
                     "{}_{}",
                     APP_CONFIG.datanode.data_dir.display(),
                     datanode_uuid
-                )))
-                .unwrap(),
-            ),
+                )),
+            )?),
             cancel_token,
             shutdown_send,
-        }
+        })
     }
 
     pub async fn run(self) -> CuddlyResult<()> {
