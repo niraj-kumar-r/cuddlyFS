@@ -12,6 +12,7 @@ pub(crate) struct DiskInfo {
     update_interval: Duration,
 }
 
+#[allow(dead_code)]
 impl DiskInfo {
     pub fn new() -> CuddlyResult<Self> {
         let mut disk_info = Self {
@@ -59,3 +60,17 @@ impl DiskInfo {
         Ok(self.available)
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+
+//     #[test]
+//     fn test_disk_info() {
+//         let mut disk_info = DiskInfo::new().unwrap();
+//         let used = disk_info.get_used().unwrap();
+//         let available = disk_info.get_available().unwrap();
+//         assert!(used > 0);
+//         assert!(available > 0);
+//     }
+// }
