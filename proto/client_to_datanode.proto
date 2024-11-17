@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package cuddlyproto;
 
-// import "common.proto";
+import "common.proto";
 
 service ClientDataNodeService {
   // rpc WriteBlock (stream Packet) returns (WriteBlockResponse);
-  // rpc ReadBlock (ReadBlockRequest) returns (stream Packet);
+  rpc ReadBlock (ReadBlockRequest) returns (stream Packet);
 }
 
 message WriteBlockResponse {
@@ -15,7 +15,5 @@ message WriteBlockResponse {
 }
 
 message ReadBlockRequest {
-    string block_id = 1;      // Unique identifier for the block to read
-    int64 offset = 2;         // Starting offset for reading
-    int64 length = 3;         // Maximum number of bytes to read
+    Block block = 1;
 }
