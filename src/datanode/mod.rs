@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 
 use crate::{
     config::APP_CONFIG,
@@ -7,15 +7,20 @@ use crate::{
 };
 
 use chrono::Utc;
+use datanode_client_service::DatanodeClientService;
 use local_ip_address::local_ip;
 use log::{error, info, warn};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
-use tonic::transport::Channel;
+use tonic::transport::{Channel, Server};
 use uuid::Uuid;
 
-use self::cuddlyproto::node_service_client::NodeServiceClient;
+use self::cuddlyproto::{
+    client_data_node_service_server::ClientDataNodeServiceServer,
+    node_service_client::NodeServiceClient,
+};
 
+mod datanode_client_service;
 mod datanode_data_registry;
 mod datanode_disk_info;
 
@@ -75,6 +80,12 @@ impl Datanode {
                     return Err(CuddlyError::RPCError(e.to_string()));
                 }
             },
+            d_res = self.run_client_services(received_block_tx) => {
+                if let Err(e) = d_res {
+                    error!("Error running client services: {:?}", e);
+                    return Err(CuddlyError::RPCError(e.to_string()));
+                }
+            },
             _ = self.cancel_token.cancelled() => {
                 warn!("Datanode Shutting down...");
             },
@@ -86,6 +97,35 @@ impl Datanode {
 
     fn get_node_service_client(&self) -> CuddlyResult<NodeServiceClient<Channel>> {
         Ok(self.node_service_client.clone())
+    }
+
+    async fn run_client_services(
+        &self,
+        received_block_tx: tokio::sync::mpsc::Sender<cuddlyproto::Block>,
+    ) -> CuddlyResult<()> {
+        let client_service = Server::builder()
+            .add_service(ClientDataNodeServiceServer::new(
+                DatanodeClientService::new(
+                    Arc::clone(&self.datanode_data_registry),
+                    received_block_tx,
+                ),
+            ))
+            .serve(SocketAddr::new(
+                self.datanode_id.ip_addr.parse().unwrap(),
+                self.datanode_id.xfer_port as u16,
+            ));
+
+        tokio::select! {
+            _ = client_service => {
+                info!("Client service stopped on");
+            },
+            _ = self.cancel_token.cancelled() => {
+                warn!("Client service loop cancelled");
+                return Ok(());
+            }
+        }
+
+        Ok(())
     }
 
     async fn run_namenode_services(
