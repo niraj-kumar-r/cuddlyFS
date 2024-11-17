@@ -2,7 +2,7 @@ use std::{path::PathBuf, sync::Arc};
 
 use crate::{
     config::APP_CONFIG,
-    cuddlyproto::{self, heartbeat_service_client::HeartbeatServiceClient},
+    cuddlyproto::{self},
     errors::CuddlyResult,
 };
 
@@ -24,7 +24,6 @@ pub struct Datanode {
     pub datanode_id: cuddlyproto::DatanodeIdProto,
     datanode_data_registry: Arc<datanode_data_registry::DatanodeDataRegistry>,
     node_service_client: Option<NodeServiceClient<Channel>>,
-    heartbeat_service_client: Option<HeartbeatServiceClient<Channel>>,
     cancel_token: CancellationToken,
     shutdown_send: mpsc::UnboundedSender<i8>,
 }
@@ -56,7 +55,6 @@ impl Datanode {
                 )),
             )?),
             node_service_client: None,
-            heartbeat_service_client: None,
             cancel_token,
             shutdown_send,
         })
@@ -112,11 +110,6 @@ impl Datanode {
         }
     }
 
-    async fn get_heartbeat_client(uri: String) -> CuddlyResult<HeartbeatServiceClient<Channel>> {
-        let client = HeartbeatServiceClient::connect(uri).await?;
-        Ok(client)
-    }
-
     pub async fn heartbeat(&self) -> CuddlyResult<tonic::Response<cuddlyproto::HeartbeatResponse>> {
         let req = tonic::Request::new(cuddlyproto::HeartbeatRequest {
             registration: Some(cuddlyproto::DatanodeRegistrationProto {
@@ -143,8 +136,7 @@ impl Datanode {
             reports: vec![],
         });
 
-        let mut client =
-            Self::get_heartbeat_client(APP_CONFIG.datanode.namenode_rpc_address.clone()).await?;
+        let mut client = self.get_node_service_client().await?;
 
         let response = client.heartbeat(req).await.unwrap();
         Ok(response)
