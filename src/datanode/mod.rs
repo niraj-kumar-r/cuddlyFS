@@ -12,6 +12,8 @@ use tokio_util::sync::CancellationToken;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
+mod datanode_disk_info;
+
 #[derive(Clone, Debug)]
 pub struct Datanode {
     pub datanode_id: cuddlyproto::DatanodeIdProto,

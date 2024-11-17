@@ -11,6 +11,8 @@ lazy_static! {
 #[allow(unused)]
 pub struct DatanodeConfig {
     pub namenode_rpc_address: String,
+    pub data_dir: PathBuf,
+    pub disk_check_interval: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -61,6 +63,8 @@ impl Default for DatanodeConfig {
     fn default() -> Self {
         Self {
             namenode_rpc_address: "http://[::1]:50051".into(),
+            data_dir: std::env::temp_dir().join("cuddlyfs").join("datanode"),
+            disk_check_interval: 3000,
         }
     }
 }
