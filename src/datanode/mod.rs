@@ -88,7 +88,7 @@ impl Datanode {
 
         loop {
             interval.tick().await;
-            match self.heartbeat().await {
+            match self.send_heartbeat().await {
                 Ok(_) => {
                     info!("Heartbeat sent successfully");
                     consecutive_errors = 0;
@@ -106,7 +106,9 @@ impl Datanode {
         }
     }
 
-    pub async fn heartbeat(&self) -> CuddlyResult<tonic::Response<cuddlyproto::HeartbeatResponse>> {
+    pub async fn send_heartbeat(
+        &self,
+    ) -> CuddlyResult<tonic::Response<cuddlyproto::HeartbeatResponse>> {
         let req = tonic::Request::new(cuddlyproto::HeartbeatRequest {
             registration: Some(cuddlyproto::DatanodeRegistrationProto {
                 datanode_id: Some(self.datanode_id.clone()),
