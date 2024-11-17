@@ -85,3 +85,10 @@ message BlockWithLocations {
   Block block = 1;
   string locations = 2;
 }
+
+message Packet {
+  int32 sequence_number = 1;
+  bytes payload = 2;
+  string checksum = 3;
+  // string packet_id = 4;
+}
