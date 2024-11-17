@@ -1,3 +1,5 @@
+use std::{path::PathBuf, sync::Arc};
+
 use crate::{
     config::APP_CONFIG,
     cuddlyproto::{self, heartbeat_service_client::HeartbeatServiceClient},
@@ -12,17 +14,20 @@ use tokio_util::sync::CancellationToken;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
+mod datanode_data_registry;
 mod datanode_disk_info;
 
 #[derive(Clone, Debug)]
 pub struct Datanode {
     pub datanode_id: cuddlyproto::DatanodeIdProto,
+    datanode_data_registry: Arc<datanode_data_registry::DatanodeDataRegistry>,
     cancel_token: CancellationToken,
     shutdown_send: mpsc::UnboundedSender<i8>,
 }
 
 impl Datanode {
     pub fn new(cancel_token: CancellationToken, shutdown_send: mpsc::UnboundedSender<i8>) -> Self {
+        let datanode_uuid = Uuid::new_v4();
         Datanode {
             datanode_id: cuddlyproto::DatanodeIdProto {
                 ip_addr: local_ip().unwrap().to_string(),
@@ -30,12 +35,20 @@ impl Datanode {
                     .unwrap_or_else(|_| "unknown".into())
                     .to_string_lossy()
                     .to_string(),
-                datanode_uuid: Uuid::new_v4().to_string(),
+                datanode_uuid: datanode_uuid.to_string(),
                 xfer_port: 50010,
                 info_port: 50075,
                 ipc_port: 50020,
                 info_secure_port: 50070,
             },
+            datanode_data_registry: Arc::new(
+                datanode_data_registry::DatanodeDataRegistry::new(&PathBuf::from(format!(
+                    "{}_{}",
+                    APP_CONFIG.datanode.data_dir.display(),
+                    datanode_uuid
+                )))
+                .unwrap(),
+            ),
             cancel_token,
             shutdown_send,
         }

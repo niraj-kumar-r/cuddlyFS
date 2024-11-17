@@ -4,6 +4,7 @@ use chrono::{DateTime, Duration, Utc};
 
 use crate::{errors::CuddlyResult, APP_CONFIG};
 
+#[derive(Clone, Debug)]
 pub(crate) struct DiskInfo {
     data_dir: PathBuf,
     used: u64,
@@ -14,9 +15,9 @@ pub(crate) struct DiskInfo {
 
 #[allow(dead_code)]
 impl DiskInfo {
-    pub fn new() -> CuddlyResult<Self> {
+    pub fn new(data_dir: &PathBuf) -> CuddlyResult<Self> {
         let mut disk_info = Self {
-            data_dir: APP_CONFIG.datanode.data_dir.clone(),
+            data_dir: data_dir.clone(),
             used: 0,
             available: 0,
             last_update: Utc::now(),
