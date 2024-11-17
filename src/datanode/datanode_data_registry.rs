@@ -41,10 +41,30 @@ impl DatanodeDataRegistry {
         self.disk_info.lock().unwrap().get_available()
     }
 
-    pub(crate) fn get_blockfile(&self, block: &Block) -> CuddlyResult<File> {
+    pub(crate) async fn get_blockfile(&self, block: &Block) -> CuddlyResult<File> {
         let path = self.block_directory.join(block.filename());
-        let file = std::fs::File::open(path)?;
-        Ok(File::from_std(file))
+
+        match path.try_exists() {
+            Ok(true) => {}
+            Ok(false) => {
+                return Err(CuddlyError::IOError(format!(
+                    "Block file {:?} does not exist",
+                    path
+                )));
+            }
+            Err(err) => {
+                return Err(CuddlyError::IOError(format!(
+                    "Failed to check if Block file exist, error {:?}",
+                    err
+                )));
+            }
+        }
+
+        let file = File::open(&path).await.map_err(|_err| {
+            CuddlyError::IOError(format!("Failed to open block file at: {:?}", path))
+        })?;
+
+        Ok(file)
     }
 
     pub(crate) async fn start_block_creation(&self, block: &Block) -> CuddlyResult<File> {
