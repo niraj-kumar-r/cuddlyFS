@@ -21,7 +21,7 @@ pub(crate) struct DatanodeDataRegistry {
     block_directory: PathBuf,
 }
 
-#[allow(dead_code)]
+// #[allow(dead_code)]
 impl DatanodeDataRegistry {
     pub(crate) fn new(data_dir: &PathBuf) -> CuddlyResult<Self> {
         let disk_info = Mutex::new(DiskInfo::new(data_dir)?);

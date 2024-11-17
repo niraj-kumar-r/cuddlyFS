@@ -1,4 +1,3 @@
-use core::fmt;
 use std::sync::Arc;
 
 use bytes::BytesMut;
@@ -10,11 +9,7 @@ use tokio::{
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Status, Streaming};
 
-use crate::{
-    block::{self, Block},
-    utils::calculate_md5_checksum,
-    APP_CONFIG,
-};
+use crate::{block::Block, utils::calculate_md5_checksum, APP_CONFIG};
 
 use self::cuddlyproto::{Packet, ReadBlockRequest, WriteBlockResponse};
 
