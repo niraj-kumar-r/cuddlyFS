@@ -1,7 +1,7 @@
 use std::{
     collections::HashSet,
     ops::{Deref, DerefMut},
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::Mutex,
 };
 
@@ -41,16 +41,29 @@ impl DatanodeDataRegistry {
         self.disk_info.lock().unwrap().get_available()
     }
 
-    pub(crate) async fn get_blockfile(&self, block: &Block) -> CuddlyResult<File> {
-        let path = self.block_directory.join(block.filename());
+    pub(crate) async fn get_blockfile<P: AsRef<Path>>(
+        &self,
+        path: P,
+        create_if_missing: bool,
+    ) -> CuddlyResult<File> {
+        let path = self.block_directory.join(path);
 
         match path.try_exists() {
             Ok(true) => {}
             Ok(false) => {
-                return Err(CuddlyError::IOError(format!(
-                    "Block file {:?} does not exist",
-                    path
-                )));
+                if create_if_missing {
+                    // If flag is true, create the file
+                    let file = File::create(&path).await.map_err(|_err| {
+                        CuddlyError::IOError(format!("Failed to create block file at: {:?}", path))
+                    })?;
+                    return Ok(file);
+                } else {
+                    // If flag is false, return an error
+                    return Err(CuddlyError::IOError(format!(
+                        "Block file {:?} does not exist",
+                        path
+                    )));
+                }
             }
             Err(err) => {
                 return Err(CuddlyError::IOError(format!(
@@ -133,5 +146,9 @@ impl DatanodeDataRegistry {
             .join(block.filename())
             .try_exists()
             .unwrap_or(false)
+    }
+
+    pub(crate) fn get_filepath_for_block_id(&self, block_id: &str) -> PathBuf {
+        self.block_directory.join(block_id)
     }
 }

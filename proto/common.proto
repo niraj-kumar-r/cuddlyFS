@@ -92,4 +92,5 @@ message Packet {
   bytes payload = 3;
   string checksum = 4;
   bool is_last = 5;
+  string block_id = 6;
 }

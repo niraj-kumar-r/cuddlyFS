@@ -1,16 +1,22 @@
+use core::fmt;
 use std::sync::Arc;
 
 use bytes::BytesMut;
 use tokio::{
-    io::{AsyncReadExt, BufReader},
+    fs::File,
+    io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
     sync::mpsc,
 };
 use tokio_stream::wrappers::ReceiverStream;
-use tonic::Status;
+use tonic::{Status, Streaming};
 
-use crate::{block::Block, utils::calculate_md5_checksum, APP_CONFIG};
+use crate::{
+    block::{self, Block},
+    utils::calculate_md5_checksum,
+    APP_CONFIG,
+};
 
-use self::cuddlyproto::{Packet, ReadBlockRequest};
+use self::cuddlyproto::{Packet, ReadBlockRequest, WriteBlockResponse};
 
 use super::{
     cuddlyproto::{self, client_data_node_service_server::ClientDataNodeService},
@@ -44,10 +50,11 @@ impl ClientDataNodeService for DatanodeClientService {
     ) -> Result<tonic::Response<Self::ReadBlockStream>, tonic::Status> {
         let ReadBlockRequest { block } = request.into_inner();
         let block: Block = block.unwrap().into();
+        let block_id = block.id.clone().to_string();
 
         let blockfile = self
             .datanode_data_registry
-            .get_blockfile(&block)
+            .get_blockfile(&block.filename(), false)
             .await
             .unwrap();
         let mut reader = BufReader::new(blockfile);
@@ -74,6 +81,7 @@ impl ClientDataNodeService for DatanodeClientService {
                             checksum: calculate_md5_checksum(&buffer),
                             payload: buffer,
                             is_last: remaining_to_send == packet_size,
+                            block_id: block_id.clone(),
                         };
 
                         if tx.send(Ok(packet)).await.is_err() {
@@ -95,5 +103,62 @@ impl ClientDataNodeService for DatanodeClientService {
         });
 
         Ok(tonic::Response::new(ReceiverStream::new(rx)))
+    }
+
+    async fn write_block(
+        &self,
+        request: tonic::Request<Streaming<Packet>>,
+    ) -> Result<tonic::Response<WriteBlockResponse>, tonic::Status> {
+        let mut stream = request.into_inner();
+
+        let mut total_written = 0;
+        let mut block_file: Option<BufWriter<File>> = None;
+        let mut packet_block_id = Option::None;
+
+        while let Some(packet) = stream.message().await? {
+            if block_file.is_none() {
+                packet_block_id = Some(packet.block_id.clone());
+                let file_path = self
+                    .datanode_data_registry
+                    .get_filepath_for_block_id(&packet.block_id);
+
+                let file = self
+                    .datanode_data_registry
+                    .get_blockfile(&file_path, true)
+                    .await
+                    .unwrap();
+                block_file = Some(BufWriter::new(file));
+            }
+            let computed_checksum = calculate_md5_checksum(&packet.payload);
+            if computed_checksum != packet.checksum {
+                return Err(Status::invalid_argument("Checksum mismatch"));
+            }
+
+            if let Some(writer) = &mut block_file {
+                writer
+                    .write_all(&packet.payload)
+                    .await
+                    .map_err(|e| Status::internal(e.to_string()))?;
+                total_written += packet.payload.len();
+            }
+        }
+        let response = WriteBlockResponse {
+            status: Some(cuddlyproto::StatusCode {
+                success: true,
+                code: 0,
+                message: format!("Block written successfully, size: {}", total_written),
+            }),
+        };
+
+        let block = cuddlyproto::Block {
+            id: packet_block_id.unwrap(),
+            len: total_written as u64,
+        };
+
+        if self.received_block_tx.send(block).await.is_err() {
+            return Err(Status::internal("Failed to send block to processing"));
+        }
+
+        Ok(tonic::Response::new(response))
     }
 }
