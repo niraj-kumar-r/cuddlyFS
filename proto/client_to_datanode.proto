@@ -1,19 +1,12 @@
 syntax = "proto3";
 
-package cuddlyfs;
+package cuddlyproto;
 
-service DataNodeService {
-  // Client streaming for writing data blocks
-  rpc WriteBlock (stream WriteBlockRequest) returns (WriteBlockResponse);
+import "common.proto";
 
-  // Server streaming for reading data blocks
-  rpc ReadBlock (ReadBlockRequest) returns (stream ReadBlockResponse);
-}
-
-message WriteBlockRequest {
-  string block_id = 1;      // Unique identifier for the block
-  bytes data = 2;           // Chunk of data to write
-  int64 offset = 3;         // Offset within the block for this chunk
+service ClientDataNodeService {
+  rpc WriteBlock (stream Packet) returns (WriteBlockResponse);
+  rpc ReadBlock (ReadBlockRequest) returns (stream Packet);
 }
 
 message WriteBlockResponse {
@@ -21,16 +14,8 @@ message WriteBlockResponse {
   string message = 2;       // Additional info or error details
 }
 
-// Request message for reading data from a block
 message ReadBlockRequest {
     string block_id = 1;      // Unique identifier for the block to read
     int64 offset = 2;         // Starting offset for reading
     int64 length = 3;         // Maximum number of bytes to read
-  }
-  
-  // Response message for ReadBlock
-  message ReadBlockResponse {
-    bytes data = 1;           // Chunk of data read from the block
-    int64 chunk_offset = 2;   // Offset of the data chunk within the block
-    bool end_of_block = 3;    // Indicates whether this is the last chunk
-  }
+}

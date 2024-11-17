@@ -87,8 +87,9 @@ message BlockWithLocations {
 }
 
 message Packet {
-  int32 sequence_number = 1;
-  bytes payload = 2;
-  string checksum = 3;
-  // string packet_id = 4;
+  uint32 sequence_number = 1;
+  uint32 size = 2;
+  bytes payload = 3;
+  string checksum = 4;
+  bool is_last = 5;
 }
