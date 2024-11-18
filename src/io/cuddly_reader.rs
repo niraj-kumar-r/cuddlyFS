@@ -1,10 +1,12 @@
 use crate::{
-    block,
-    cuddlyproto::{file_service_client::FileServiceClient, OpenFileRequest},
-    errors::{CuddlyError, CuddlyResult},
+    cuddlyproto::{file_service_client::FileServiceClient, BlockWithLocations, OpenFileRequest},
+    errors::CuddlyResult,
 };
 
-pub struct CuddlyReader {}
+pub struct CuddlyReader {
+    blocks_with_locations: Vec<BlockWithLocations>,
+    total_file_size: u64,
+}
 
 impl CuddlyReader {
     pub async fn open(
@@ -27,8 +29,15 @@ impl CuddlyReader {
             .await?
             .into_inner();
 
-        let block_with_locations = res.blocks_with_locations;
+        let blocks_with_locations = res.blocks_with_locations;
 
-        Ok(Self {})
+        let total_file_size = blocks_with_locations
+            .iter()
+            .fold(0, |acc, b| acc + b.block.as_ref().unwrap().len);
+
+        Ok(Self {
+            blocks_with_locations,
+            total_file_size,
+        })
     }
 }
