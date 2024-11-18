@@ -7,6 +7,7 @@ use crate::{
 pub struct CuddlyReader {
     blocks_with_locations: Vec<BlockWithLocations>,
     total_file_size: u64,
+    current_block_seq: u64,
 }
 
 impl CuddlyReader {
@@ -30,15 +31,26 @@ impl CuddlyReader {
             .await?
             .into_inner();
 
-        let blocks_with_locations = res.blocks_with_locations;
+        let mut blocks_with_locations = res.blocks_with_locations;
 
         let total_file_size = blocks_with_locations
             .iter()
             .fold(0, |acc, b| acc + b.block.as_ref().unwrap().len);
 
+        blocks_with_locations.sort_by(|a, b| {
+            a.block
+                .as_ref()
+                .unwrap()
+                .seq
+                .cmp(&b.block.as_ref().unwrap().seq)
+        });
+
+        let current_block_seq = blocks_with_locations[0].block.as_ref().unwrap().seq;
+
         Ok(Self {
             blocks_with_locations,
             total_file_size,
+            current_block_seq,
         })
     }
 }
