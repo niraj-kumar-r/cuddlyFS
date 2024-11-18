@@ -1,3 +1,5 @@
+use tokio::io::AsyncRead;
+
 use crate::{
     cuddlyproto::{file_service_client::FileServiceClient, BlockWithLocations, OpenFileRequest},
     errors::CuddlyResult,
@@ -54,5 +56,15 @@ impl CuddlyReader {
             current_block_seq,
             current_block_offset: 0,
         })
+    }
+}
+
+impl AsyncRead for CuddlyReader {
+    fn poll_read(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
+    ) -> std::task::Poll<std::io::Result<()>> {
+        todo!()
     }
 }
