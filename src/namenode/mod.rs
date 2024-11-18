@@ -1,6 +1,5 @@
 use log::info;
 use namenode_data_registry::DataRegistry;
-use namenode_directory_service::NamenodeDirectoryService;
 use namenode_file_service::NamenodeFileService;
 use namenode_node_service::NamenodeNodeService;
 use std::{net::SocketAddr, sync::Arc};
@@ -9,16 +8,12 @@ use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 
 use crate::{
-    cuddlyproto::{
-        directory_service_server::DirectoryServiceServer, file_service_server::FileServiceServer,
-        node_service_server::NodeServiceServer,
-    },
+    cuddlyproto::{file_service_server::FileServiceServer, node_service_server::NodeServiceServer},
     errors::CuddlyResult,
 };
 
 mod datanode_info;
 mod namenode_data_registry;
-mod namenode_directory_service;
 mod namenode_file_service;
 mod namenode_node_service;
 mod namenode_operation_logger;
@@ -49,9 +44,9 @@ impl Namenode {
             .add_service(NodeServiceServer::new(NamenodeNodeService::new(
                 Arc::clone(&self.data_registry),
             )))
-            .add_service(DirectoryServiceServer::new(NamenodeDirectoryService::new(
-                Arc::clone(&self.data_registry),
-            )))
+            // .add_service(DirectoryServiceServer::new(NamenodeDirectoryService::new(
+            //     Arc::clone(&self.data_registry),
+            // )))
             .add_service(FileServiceServer::new(NamenodeFileService::new(
                 Arc::clone(&self.data_registry),
             )))

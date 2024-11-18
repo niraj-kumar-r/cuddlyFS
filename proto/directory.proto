@@ -54,11 +54,3 @@ message ReportDatanodesRequest {
 message ReportDatanodesResponse {
   repeated DatanodeInfo datanodes = 1;
 }
-
-// Directory service with directory-related operations
-service DirectoryService {
-  rpc ReportDatanodes(ReportDatanodesRequest) returns (ReportDatanodesResponse);
-  rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryResponse);
-  rpc CreateDirectory (CreateDirectoryRequest) returns (CreateDirectoryResponse);
-  // rpc DeleteDirectory (DeleteDirectoryRequest) returns (DeleteDirectoryResponse);
-}
