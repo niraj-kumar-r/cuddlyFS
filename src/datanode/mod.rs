@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use std::{net::SocketAddr, sync::Arc};
 
 use crate::{
     config::APP_CONFIG,
@@ -53,11 +53,7 @@ impl Datanode {
                 info_secure_port: 50070,
             },
             datanode_data_registry: Arc::new(datanode_data_registry::DatanodeDataRegistry::new(
-                &PathBuf::from(format!(
-                    "{}_{}",
-                    APP_CONFIG.datanode.data_dir.display(),
-                    datanode_uuid
-                )),
+                &APP_CONFIG.datanode.data_dir,
             )?),
             node_service_client: NodeServiceClient::connect(
                 APP_CONFIG.datanode.namenode_rpc_address.clone(),
@@ -117,7 +113,7 @@ impl Datanode {
 
         tokio::select! {
             _ = client_service => {
-                info!("Client service stopped on");
+                info!("Client service stopped");
             },
             _ = self.cancel_token.cancelled() => {
                 warn!("Client service loop cancelled");
