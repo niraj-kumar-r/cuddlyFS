@@ -9,11 +9,12 @@ use crate::cuddlyproto;
 pub struct Block {
     pub id: Uuid,
     pub len: u64,
+    pub seq: u64,
 }
 
 impl Block {
-    pub fn new(id: Uuid, len: u64) -> Self {
-        Self { id, len }
+    pub fn new(id: Uuid, len: u64, seq: u64) -> Self {
+        Self { id, len, seq }
     }
 
     pub fn filename(&self) -> String {
@@ -43,16 +44,16 @@ impl Hash for Block {
 
 impl From<cuddlyproto::Block> for Block {
     fn from(value: cuddlyproto::Block) -> Self {
-        let cuddlyproto::Block { id, len } = value;
+        let cuddlyproto::Block { id, len, seq } = value;
         let id = Uuid::parse_str(&id).unwrap();
-        Self { id, len }
+        Self { id, len, seq }
     }
 }
 
 impl From<Block> for cuddlyproto::Block {
     fn from(value: Block) -> Self {
-        let Block { id, len } = value;
+        let Block { id, len, seq } = value;
         let id = id.to_string();
-        Self { id, len }
+        Self { id, len, seq }
     }
 }

@@ -46,6 +46,7 @@ impl ClientDataNodeService for DatanodeClientService {
         let ReadBlockRequest { block } = request.into_inner();
         let block: Block = block.unwrap().into();
         let block_id = block.id.clone().to_string();
+        let block_seq = block.seq;
 
         let blockfile = self
             .datanode_data_registry
@@ -77,6 +78,7 @@ impl ClientDataNodeService for DatanodeClientService {
                             payload: buffer,
                             is_last: remaining_to_send == packet_size,
                             block_id: block_id.clone(),
+                            block_seq: block_seq.clone(),
                         };
 
                         if tx.send(Ok(packet)).await.is_err() {
@@ -109,10 +111,12 @@ impl ClientDataNodeService for DatanodeClientService {
         let mut total_written = 0;
         let mut block_file: Option<BufWriter<File>> = None;
         let mut packet_block_id = Option::None;
+        let mut packet_block_seq = Option::None;
 
         while let Some(packet) = stream.message().await? {
             if block_file.is_none() {
                 packet_block_id = Some(packet.block_id.clone());
+                packet_block_seq = Some(packet.block_seq.clone());
                 let file_path = self
                     .datanode_data_registry
                     .get_filepath_for_block_id(&packet.block_id);
@@ -148,6 +152,7 @@ impl ClientDataNodeService for DatanodeClientService {
         let block = cuddlyproto::Block {
             id: packet_block_id.unwrap(),
             len: total_written as u64,
+            seq: packet_block_seq.unwrap(),
         };
 
         if self.received_block_tx.send(block).await.is_err() {

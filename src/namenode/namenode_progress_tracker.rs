@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::atomic};
 
 use uuid::Uuid;
 
@@ -7,6 +7,7 @@ use crate::errors::{CuddlyError, CuddlyResult};
 #[derive(Debug)]
 pub(crate) struct NamenodeProgressTracker {
     filename_to_blocks: HashMap<String, Vec<Uuid>>,
+    filename_to_block_seq: HashMap<String, atomic::AtomicU64>,
     block_to_replication_count: HashMap<Uuid, u64>,
 }
 
@@ -15,6 +16,7 @@ impl NamenodeProgressTracker {
         Self {
             filename_to_blocks: HashMap::new(),
             block_to_replication_count: HashMap::new(),
+            filename_to_block_seq: HashMap::new(),
         }
     }
 
@@ -48,8 +50,9 @@ impl NamenodeProgressTracker {
                 filename
             )));
         }
-        self.filename_to_blocks.insert(filename, Vec::new());
-        // self.block_to_replication_count.remove(&block_id);
+        self.filename_to_blocks.insert(filename.clone(), Vec::new());
+        self.filename_to_block_seq
+            .insert(filename.clone(), 0.into());
         Ok(())
     }
 
@@ -59,6 +62,7 @@ impl NamenodeProgressTracker {
             for block_id in blocks {
                 self.block_to_replication_count.remove(&block_id);
             }
+            self.filename_to_block_seq.remove(filename);
             Ok(())
         } else {
             Err(CuddlyError::FSError(format!(
@@ -73,12 +77,17 @@ impl NamenodeProgressTracker {
         self.block_to_replication_count.contains_key(block_id)
     }
 
-    pub(crate) fn add_block(&mut self, filename: &str, block_id: Uuid) -> CuddlyResult<()> {
+    pub(crate) fn add_block(&mut self, filename: &str, block_id: Uuid) -> CuddlyResult<u64> {
         let blocks = self.filename_to_blocks.get_mut(filename);
         if let Some(blocks) = blocks {
             blocks.push(block_id);
             self.block_to_replication_count.insert(block_id, 0);
-            Ok(())
+            let val = self
+                .filename_to_block_seq
+                .get_mut(filename)
+                .unwrap()
+                .fetch_add(1, atomic::Ordering::SeqCst);
+            Ok(val)
         } else {
             Err(CuddlyError::FSError(format!(
                 "'{}': File creation has not started yet",

@@ -331,13 +331,14 @@ impl DataRegistry {
             }
             if target_nodes.len() as u64 >= APP_CONFIG.replication_factor as u64 {
                 let block_id = self.next_block_id();
-                let block = Block::new(block_id, 0);
-                let mut blocks = HashSet::new();
-                blocks.insert(block);
-                self.namenode_progress_tracker
+                let seq = self
+                    .namenode_progress_tracker
                     .write()
                     .unwrap()
                     .add_block(path, block_id)?;
+                let block = Block::new(block_id, 0, seq);
+                let mut blocks = HashSet::new();
+                blocks.insert(block);
                 return Ok(Some((block, target_nodes.into_iter().collect())));
             }
         }
@@ -441,11 +442,12 @@ impl DataRegistry {
             }
             if target_nodes.len() as u64 >= APP_CONFIG.replication_factor as u64 {
                 let block_id = self.next_block_id();
-                let block = Block::new(block_id, 0);
-                self.namenode_progress_tracker
+                let seq = self
+                    .namenode_progress_tracker
                     .write()
                     .unwrap()
                     .add_block(path, block_id)?;
+                let block = Block::new(block_id, 0, seq);
                 return Ok(Some((block, target_nodes.into_iter().collect())));
             }
         }

@@ -79,6 +79,7 @@ message StorageReportProto {
 message Block {
   string id = 1;
   uint64 len = 2;
+  uint64 seq = 3;
 }
 
 message BlockWithLocations {
@@ -93,4 +94,5 @@ message Packet {
   string checksum = 4;
   bool is_last = 5;
   string block_id = 6;
+  uint64 block_seq = 7;
 }

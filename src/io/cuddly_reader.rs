@@ -3,6 +3,7 @@ use crate::{
     errors::CuddlyResult,
 };
 
+#[allow(dead_code)]
 pub struct CuddlyReader {
     blocks_with_locations: Vec<BlockWithLocations>,
     total_file_size: u64,
