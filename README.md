@@ -13,6 +13,7 @@ A distributed file system implemented in Rust.
 -   [Development](#development)
 -   [Contributing](#contributing)
 -   [License](#license)
+-   [Authors](#authors)
 
 ## Introduction
 
@@ -51,7 +52,26 @@ sudo apt install protobuf-compiler
 sudo dnf install protobuf
 ```
 
-To install cuddlyFS, follow these steps:
+To install cuddlyFS with cargo:
+
+```sh
+cargo install cuddlyFS
+```
+
+To install cuddlyFS as a library, add it to your `Cargo.toml`:
+
+```toml
+[dependencies]
+cuddlyfs = "0.1.0-beta.1"
+```
+
+or run:
+
+```sh
+cargo add cuddlyfs
+```
+
+To compile cuddlyFS from source, follow these steps:
 
 1. Clone the repository:
 
@@ -107,7 +127,7 @@ Do not modify the default configuration files in the `config` directory. Instead
 ```sh
 # for dev.yaml file in config directory
 EXPORT RUN_MODE=dev
-cargo run --bin namenode -- --config path/to/config.toml
+cargo run --bin namenode
 ```
 
 ## Development
@@ -129,3 +149,7 @@ Contributions are welcome! Feel free to open an issue or submit a pull request i
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Authors
+
+-   [Niraj Kumar](https://github.com/niraj-kumar-r)
