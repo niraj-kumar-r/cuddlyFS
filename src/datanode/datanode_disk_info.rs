@@ -23,6 +23,9 @@ impl DiskInfo {
             last_update: Utc::now(),
             update_interval: Duration::seconds(APP_CONFIG.datanode.disk_check_interval as i64),
         };
+        if !disk_info.data_dir.exists() {
+            std::fs::create_dir_all(disk_info.data_dir.as_path())?;
+        }
         disk_info.refresh(true)?;
         Ok(disk_info)
     }

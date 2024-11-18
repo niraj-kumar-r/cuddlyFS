@@ -1,6 +1,8 @@
 use std::{
     collections::HashSet,
+    net::IpAddr,
     num::NonZero,
+    str::FromStr,
     sync::{Mutex, RwLock},
 };
 
@@ -109,7 +111,7 @@ impl DataRegistry {
     pub fn handle_heartbeat(
         &self,
         datanode_registration: cuddlyproto::DatanodeRegistrationProto,
-        _storage_reports: Vec<cuddlyproto::StorageReportProto>,
+        storage_reports: Vec<cuddlyproto::StorageReportProto>,
     ) -> cuddlyproto::HeartbeatResponse {
         let datanode_uuid = datanode_registration
             .datanode_id
@@ -134,6 +136,20 @@ impl DataRegistry {
                     info!("New Datanode Connected with uuid: {}", uuid);
                 }
             }
+
+            let mut datanode_to_blocks = self.datanode_to_blocks.write().unwrap();
+            let datanode_info = DatanodeInfo {
+                ip_address: datanode_registration
+                    .datanode_id
+                    .as_ref()
+                    .and_then(|id| IpAddr::from_str(&id.ip_addr).ok())
+                    .unwrap(),
+
+                datanode_uuid: Uuid::parse_str(&datanode_uuid.as_ref().unwrap()).unwrap(),
+                total_capacity: storage_reports.iter().map(|report| report.capacity).sum(),
+                used_capacity: storage_reports.iter().map(|report| report.dfs_used).sum(),
+            };
+            datanode_to_blocks.update_data(datanode_info.datanode_uuid, datanode_info);
             let response = cuddlyproto::HeartbeatResponse {
                 status: Some(cuddlyproto::StatusCode {
                     success: true,

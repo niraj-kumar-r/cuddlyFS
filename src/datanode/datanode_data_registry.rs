@@ -21,7 +21,7 @@ pub(crate) struct DatanodeDataRegistry {
     block_directory: PathBuf,
 }
 
-// #[allow(dead_code)]
+#[allow(dead_code)]
 impl DatanodeDataRegistry {
     pub(crate) fn new(data_dir: &PathBuf) -> CuddlyResult<Self> {
         let disk_info = Mutex::new(DiskInfo::new(data_dir)?);
@@ -39,6 +39,11 @@ impl DatanodeDataRegistry {
 
     pub(crate) fn available(&self) -> CuddlyResult<u64> {
         self.disk_info.lock().unwrap().get_available()
+    }
+
+    pub(crate) fn total(&self) -> CuddlyResult<u64> {
+        let mut disk_info = self.disk_info.lock().unwrap();
+        Ok(disk_info.get_used()? + disk_info.get_available()?)
     }
 
     pub(crate) async fn get_blockfile<P: AsRef<Path>>(

@@ -17,7 +17,7 @@ use uuid::Uuid;
 
 use self::cuddlyproto::{
     client_data_node_service_server::ClientDataNodeServiceServer,
-    node_service_client::NodeServiceClient,
+    node_service_client::NodeServiceClient, StorageReportProto,
 };
 
 mod datanode_client_service;
@@ -193,7 +193,16 @@ impl Datanode {
                 }),
                 software_version: "0.1.0".to_string(),
             }),
-            reports: vec![],
+            reports: vec![StorageReportProto {
+                storage: None,
+                failed: false,
+                capacity: self.datanode_data_registry.total().unwrap(),
+                dfs_used: self.datanode_data_registry.used().unwrap(),
+                remaining: self.datanode_data_registry.available().unwrap(),
+                block_pool_used: 0,
+                non_dfs_used: 0,
+                mount: "/".to_string(),
+            }],
         });
 
         let mut client = self.get_node_service_client()?;
