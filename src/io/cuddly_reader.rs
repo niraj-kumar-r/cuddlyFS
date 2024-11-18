@@ -8,6 +8,7 @@ pub struct CuddlyReader {
     blocks_with_locations: Vec<BlockWithLocations>,
     total_file_size: u64,
     current_block_seq: u64,
+    current_block_offset: u64,
 }
 
 impl CuddlyReader {
@@ -51,6 +52,7 @@ impl CuddlyReader {
             blocks_with_locations,
             total_file_size,
             current_block_seq,
+            current_block_offset: 0,
         })
     }
 }
