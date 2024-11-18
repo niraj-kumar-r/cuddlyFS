@@ -83,7 +83,7 @@ message Block {
 
 message BlockWithLocations {
   Block block = 1;
-  string locations = 2;
+  repeated string locations = 2;
 }
 
 message Packet {

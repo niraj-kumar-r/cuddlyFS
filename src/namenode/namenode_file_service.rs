@@ -113,7 +113,7 @@ impl FileService for NamenodeFileService {
                     .collect();
 
                 Ok(Response::new(OpenFileResponse {
-                    blocks: res,
+                    blocks_with_locations: res,
                     status: Some(cuddlyproto::StatusCode {
                         success: true,
                         code: cuddlyproto::StatusEnum::Ok as i32,
