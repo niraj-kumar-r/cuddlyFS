@@ -6,8 +6,8 @@ use super::namenode_data_registry::DataRegistry;
 use crate::{
     block::Block,
     cuddlyproto::{
-        node_service_server::NodeService, BlockReceivedRequest, BlockReceivedResponse, StatusCode,
-        StatusEnum,
+        node_service_server::NodeService, BlockReceivedRequest, BlockReceivedResponse,
+        HeartbeatRequest, HeartbeatResponse, StatusCode, StatusEnum,
     },
 };
 
@@ -42,5 +42,18 @@ impl NodeService for NamenodeNodeService {
             })),
             Err(_status) => Err(tonic::Status::invalid_argument("Invalid argument")),
         }
+    }
+
+    async fn heartbeat(
+        &self,
+        request: Request<HeartbeatRequest>,
+    ) -> Result<Response<HeartbeatResponse>, tonic::Status> {
+        let request_data = request.into_inner();
+
+        let response = self
+            .data_registry
+            .handle_heartbeat(request_data.registration.unwrap(), request_data.reports);
+
+        Ok(Response::new(response))
     }
 }

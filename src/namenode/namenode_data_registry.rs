@@ -1,6 +1,8 @@
 use std::{
     collections::HashSet,
+    net::IpAddr,
     num::NonZero,
+    str::FromStr,
     sync::{Mutex, RwLock},
 };
 
@@ -109,7 +111,7 @@ impl DataRegistry {
     pub fn handle_heartbeat(
         &self,
         datanode_registration: cuddlyproto::DatanodeRegistrationProto,
-        _storage_reports: Vec<cuddlyproto::StorageReportProto>,
+        storage_reports: Vec<cuddlyproto::StorageReportProto>,
     ) -> cuddlyproto::HeartbeatResponse {
         let datanode_uuid = datanode_registration
             .datanode_id
@@ -134,6 +136,20 @@ impl DataRegistry {
                     info!("New Datanode Connected with uuid: {}", uuid);
                 }
             }
+
+            let mut datanode_to_blocks = self.datanode_to_blocks.write().unwrap();
+            let datanode_info = DatanodeInfo {
+                ip_address: datanode_registration
+                    .datanode_id
+                    .as_ref()
+                    .and_then(|id| IpAddr::from_str(&id.ip_addr).ok())
+                    .unwrap(),
+
+                datanode_uuid: Uuid::parse_str(&datanode_uuid.as_ref().unwrap()).unwrap(),
+                total_capacity: storage_reports.iter().map(|report| report.capacity).sum(),
+                used_capacity: storage_reports.iter().map(|report| report.dfs_used).sum(),
+            };
+            datanode_to_blocks.update_data(datanode_info.datanode_uuid, datanode_info);
             let response = cuddlyproto::HeartbeatResponse {
                 status: Some(cuddlyproto::StatusCode {
                     success: true,
@@ -233,6 +249,20 @@ impl DataRegistry {
         edit_logger.log_operation(&op).await;
     }
 
+    pub(crate) fn report_datanodes(&self) -> CuddlyResult<Vec<DatanodeInfo>> {
+        Ok(self.get_alive_datanodes())
+    }
+
+    fn get_alive_datanodes(&self) -> Vec<DatanodeInfo> {
+        let datanode_to_blocks = self.datanode_to_blocks.read().unwrap();
+        self.heartbeat_cache
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(uuid, _instant)| datanode_to_blocks.get_data(uuid).unwrap().to_owned())
+            .collect::<Vec<_>>()
+    }
+
     pub(crate) async fn make_dir(&self, path: &str) -> CuddlyResult<()> {
         self.non_logging_make_dir(path)?;
         self.log_operation(EditOperation::Mkdir(path.to_owned()))
@@ -292,15 +322,7 @@ impl DataRegistry {
             .add_file(path.to_owned())?;
 
         let mut target_nodes = HashSet::new();
-        let mut available_nodes = {
-            let datanode_to_blocks = self.datanode_to_blocks.read().unwrap();
-            self.heartbeat_cache
-                .lock()
-                .unwrap()
-                .iter()
-                .map(|(uuid, _instant)| datanode_to_blocks.get_data(uuid).unwrap().to_owned())
-                .collect::<Vec<_>>()
-        };
+        let mut available_nodes = self.get_alive_datanodes();
         available_nodes.shuffle(&mut thread_rng());
 
         for node_info in available_nodes {
@@ -309,13 +331,14 @@ impl DataRegistry {
             }
             if target_nodes.len() as u64 >= APP_CONFIG.replication_factor as u64 {
                 let block_id = self.next_block_id();
-                let block = Block::new(block_id, 0);
-                let mut blocks = HashSet::new();
-                blocks.insert(block);
-                self.namenode_progress_tracker
+                let seq = self
+                    .namenode_progress_tracker
                     .write()
                     .unwrap()
                     .add_block(path, block_id)?;
+                let block = Block::new(block_id, 0, seq);
+                let mut blocks = HashSet::new();
+                blocks.insert(block);
                 return Ok(Some((block, target_nodes.into_iter().collect())));
             }
         }
@@ -410,15 +433,7 @@ impl DataRegistry {
         self.check_all_blocks_replicated(path)?;
 
         let mut target_nodes = HashSet::new();
-        let mut available_nodes = {
-            let datanode_to_blocks = self.datanode_to_blocks.read().unwrap();
-            self.heartbeat_cache
-                .lock()
-                .unwrap()
-                .iter()
-                .map(|(uuid, _instant)| datanode_to_blocks.get_data(uuid).unwrap().to_owned())
-                .collect::<Vec<_>>()
-        };
+        let mut available_nodes = self.get_alive_datanodes();
         available_nodes.shuffle(&mut thread_rng());
 
         for node_info in available_nodes {
@@ -427,11 +442,12 @@ impl DataRegistry {
             }
             if target_nodes.len() as u64 >= APP_CONFIG.replication_factor as u64 {
                 let block_id = self.next_block_id();
-                let block = Block::new(block_id, 0);
-                self.namenode_progress_tracker
+                let seq = self
+                    .namenode_progress_tracker
                     .write()
                     .unwrap()
                     .add_block(path, block_id)?;
+                let block = Block::new(block_id, 0, seq);
                 return Ok(Some((block, target_nodes.into_iter().collect())));
             }
         }

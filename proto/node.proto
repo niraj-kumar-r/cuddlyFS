@@ -4,6 +4,8 @@ package cuddlyproto;
 
 // import "file.proto";
 import "common.proto";
+import "datanode.proto";
+import "namenode.proto";
 
 // message ReplicateFileRequest {
 //   string file_path = 1;
@@ -34,9 +36,22 @@ message BlockReceivedResponse {
   cuddlyproto.StatusCode status = 1;
 }
 
+/// Heartbeat request message : 
+message HeartbeatRequest {
+  DatanodeRegistrationProto registration = 1; // Datanode info
+  repeated StorageReportProto reports = 2;
+}
+
+// Heartbeat response message
+message HeartbeatResponse {
+  StatusCode status = 1;  // Error message if the heartbeat was not received successfully
+  NNHAStatusHeartbeatProto haStatus = 2; // High availability status
+}
+
 // Node service for inter-node communication
 service NodeService {
   // rpc ReplicateFile (ReplicateFileRequest) returns (ReplicateFileResponse);
   // rpc SynchronizeMetadata (SynchronizeMetadataRequest) returns (SynchronizeMetadataResponse);
   rpc BlockReceived (BlockReceivedRequest) returns (BlockReceivedResponse);
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
 }

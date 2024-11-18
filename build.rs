@@ -1,5 +1,6 @@
 fn main() {
     tonic_build::configure()
+        .bytes(&["."])
         .compile_protos(
             &[
                 "proto/common.proto",
@@ -9,7 +10,7 @@ fn main() {
                 "proto/directory.proto",
                 "proto/datanode.proto",
                 "proto/namenode.proto",
-                "proto/heartbeat.proto",
+                "proto/client_to_datanode.proto",
             ],
             &["proto"],
         )

@@ -5,6 +5,7 @@ package cuddlyproto;
 import "auth.proto";
 import "common.proto";
 import "datanode.proto";
+import "directory.proto";
 
 message FileMetadata {
   int64 size = 1;
@@ -33,7 +34,7 @@ message OpenFileRequest {
 
 // Response after opening a file
 message OpenFileResponse {
-  repeated BlockWithLocations blocks = 1;
+  repeated BlockWithLocations blocks_with_locations = 1;
   cuddlyproto.StatusCode status = 2;
 }
 
@@ -63,6 +64,9 @@ message AbortBlockWriteRequest {
 
 // File service with file-related operations
 service FileService {
+  rpc ReportDatanodes(ReportDatanodesRequest) returns (ReportDatanodesResponse);
+  rpc ListDirectory (ListDirectoryRequest) returns (ListDirectoryResponse);
+  rpc CreateDirectory (CreateDirectoryRequest) returns (CreateDirectoryResponse);
   rpc open_file(OpenFileRequest) returns (OpenFileResponse);
   rpc start_file_create(CreateFileRequest) returns (CreateFileResponse);
   rpc finish_file_create(CreateFileRequest) returns (StatusCode);

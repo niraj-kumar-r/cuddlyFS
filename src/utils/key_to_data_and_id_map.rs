@@ -39,6 +39,22 @@ where
         });
     }
 
+    /// Update the data associated with the key.
+    /// If the key is not in the map, insert the key with the data.
+    pub(crate) fn update_data(&mut self, key: K, data: D) {
+        if let Some(info) = self.inner_map.get_mut(&key) {
+            info.data = data;
+        } else {
+            self.inner_map.insert(
+                key,
+                Info {
+                    data,
+                    ids: HashSet::new(),
+                },
+            );
+        }
+    }
+
     /// Insert an id into the map.
     /// Returns true if the key is not in the map, false otherwise.
     pub(crate) fn insert_id_for_key(&mut self, key: K, data: D, id: I) -> bool {

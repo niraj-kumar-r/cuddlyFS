@@ -11,6 +11,8 @@ lazy_static! {
 #[allow(unused)]
 pub struct DatanodeConfig {
     pub namenode_rpc_address: String,
+    pub data_dir: PathBuf,
+    pub disk_check_interval: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -26,8 +28,9 @@ pub struct AppConfig {
     pub debug: bool,
     pub namenode: NamenodeConfig,
     pub datanode: DatanodeConfig,
+    pub packet_size: u64,
     pub block_size: u64,
-    pub replication_factor: u8,
+    pub replication_factor: u64,
 }
 
 impl AppConfig {
@@ -51,6 +54,7 @@ impl Default for AppConfig {
             debug: false,
             namenode: NamenodeConfig::default(),
             datanode: DatanodeConfig::default(),
+            packet_size: 64 * 1024,
             block_size: 64 * 1024 * 1024,
             replication_factor: 3,
         }
@@ -61,6 +65,8 @@ impl Default for DatanodeConfig {
     fn default() -> Self {
         Self {
             namenode_rpc_address: "http://[::1]:50051".into(),
+            data_dir: std::env::temp_dir().join("cuddlyfs").join("datanode"),
+            disk_check_interval: 3000,
         }
     }
 }
@@ -84,9 +90,15 @@ mod tests {
 
     #[test]
     fn test_default_config() {
-        let config = AppConfig::default();
-        assert_eq!(config.debug, false);
+        let config = AppConfig::new().unwrap();
         assert_eq!(config.namenode.bind_address, "[::1]:50051");
         assert_eq!(config.datanode.namenode_rpc_address, "http://[::1]:50051");
+        assert_eq!(
+            config.datanode.data_dir,
+            std::env::temp_dir().join("cuddlyfs").join("datanode")
+        );
+        assert_eq!(config.datanode.disk_check_interval, 3000);
+        assert_eq!(config.block_size, 64 * 1024 * 1024);
+        assert_eq!(config.replication_factor, 3);
     }
 }
