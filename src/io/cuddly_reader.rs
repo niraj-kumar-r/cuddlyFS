@@ -1,7 +1,13 @@
+use std::task::Poll;
+
 use tokio::io::AsyncRead;
 
 use crate::{
-    cuddlyproto::{file_service_client::FileServiceClient, BlockWithLocations, OpenFileRequest},
+    cuddlyproto::{
+        client_data_node_service_client::ClientDataNodeServiceClient,
+        file_service_client::FileServiceClient, BlockWithLocations, OpenFileRequest,
+        ReadBlockRequest,
+    },
     errors::CuddlyResult,
 };
 
@@ -9,8 +15,8 @@ use crate::{
 pub struct CuddlyReader {
     blocks_with_locations: Vec<BlockWithLocations>,
     total_file_size: u64,
-    current_block_seq: u64,
     current_block_offset: u64,
+    current_block_index: usize,
 }
 
 impl CuddlyReader {
@@ -48,13 +54,13 @@ impl CuddlyReader {
                 .cmp(&b.block.as_ref().unwrap().seq)
         });
 
-        let current_block_seq = blocks_with_locations[0].block.as_ref().unwrap().seq;
+        // let current_block_seq = blocks_with_locations[0].block.as_ref().unwrap().seq;
 
         Ok(Self {
             blocks_with_locations,
             total_file_size,
-            current_block_seq,
             current_block_offset: 0,
+            current_block_index: 0,
         })
     }
 }
@@ -64,7 +70,50 @@ impl AsyncRead for CuddlyReader {
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
         buf: &mut tokio::io::ReadBuf<'_>,
-    ) -> std::task::Poll<std::io::Result<()>> {
-        todo!()
+    ) -> Poll<std::io::Result<()>> {
+        let self_mut = self.get_mut();
+
+        if self_mut.current_block_index >= self_mut.blocks_with_locations.len() {
+            return Poll::Ready(Ok(()));
+        }
+
+        let current_block_with_location =
+            &self_mut.blocks_with_locations[self_mut.current_block_index as usize];
+        let block = current_block_with_location.block.as_ref().unwrap().clone();
+
+        let data_node_address = current_block_with_location.locations[0].clone();
+
+        let fut = async move {
+            let mut data_node_client = ClientDataNodeServiceClient::connect(data_node_address)
+                .await
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+            let mut stream = data_node_client
+                .read_block(ReadBlockRequest { block: Some(block) })
+                .await
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+                .into_inner();
+
+            while let Some(packet) = stream.message().await.map_err(|e| {
+                std::io::Error::new(std::io::ErrorKind::Other, format!("Stream error: {e}"))
+            })? {
+                let data = packet.payload;
+                buf.put_slice(&data);
+
+                self_mut.current_block_offset += packet.size as u64;
+
+                if packet.is_last {
+                    self_mut.current_block_index += 1;
+                    self_mut.current_block_offset = 0;
+                    break;
+                }
+            }
+            Ok(())
+        };
+
+        match tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(fut)) {
+            Ok(()) => Poll::Ready(Ok(())),
+            Err(e) => Poll::Ready(Err(e)),
+        }
     }
 }
