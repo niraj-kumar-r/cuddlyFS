@@ -1,6 +1,6 @@
 use std::{future::Future, pin::Pin, task::Poll};
 
-use tokio::io::AsyncRead;
+use tokio::io::{AsyncRead, BufReader};
 
 use crate::{
     cuddlyproto::{
@@ -9,6 +9,7 @@ use crate::{
         ReadBlockRequest,
     },
     errors::CuddlyResult,
+    APP_CONFIG,
 };
 
 #[allow(dead_code)]
@@ -24,7 +25,7 @@ impl CuddlyReader {
     pub async fn open(
         namenode_rpc_address: String,
         file_path: impl Into<String>,
-    ) -> CuddlyResult<Self> {
+    ) -> CuddlyResult<BufReader<Self>> {
         let mut namenode_client =
             match FileServiceClient::connect(namenode_rpc_address.clone()).await {
                 Ok(client) => client,
@@ -55,17 +56,19 @@ impl CuddlyReader {
                 .cmp(&b.block.as_ref().unwrap().seq)
         });
 
-        Ok(Self {
-            blocks_with_locations,
-            total_file_size,
-            current_block_offset: 0,
-            current_block_index: 0,
-            current_future: None,
-        })
+        Ok(BufReader::with_capacity(
+            3 * APP_CONFIG.block_size as usize,
+            Self {
+                blocks_with_locations,
+                total_file_size,
+                current_block_offset: 0,
+                current_block_index: 0,
+                current_future: None,
+            },
+        ))
     }
 }
 
-// TODO: Add support to parallely read into internal buffer, and poll_read from there
 impl AsyncRead for CuddlyReader {
     fn poll_read(
         self: std::pin::Pin<&mut Self>,
