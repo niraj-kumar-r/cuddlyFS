@@ -122,6 +122,15 @@ impl AsyncRead for CuddlyReader {
 
                 Poll::Ready(Ok(()))
             }
+            Poll::Ready(Err(e))
+                if e.kind() == std::io::ErrorKind::UnexpectedEof
+                    && e.to_string() == "End of stream" =>
+            {
+                self_mut.current_block_index += 1;
+                self_mut.current_block_offset = 0;
+                self_mut.current_future = None;
+                Poll::Ready(Ok(()))
+            }
             Poll::Ready(Err(e)) => {
                 self_mut.current_future = None;
                 Poll::Ready(Err(e))
