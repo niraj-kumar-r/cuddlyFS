@@ -65,6 +65,7 @@ impl CuddlyReader {
     }
 }
 
+// TODO: Add support to parallely read into internal buffer, and poll_read from there
 impl AsyncRead for CuddlyReader {
     fn poll_read(
         self: std::pin::Pin<&mut Self>,
