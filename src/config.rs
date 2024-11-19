@@ -31,6 +31,7 @@ pub struct AppConfig {
     pub packet_size: u64,
     pub block_size: u64,
     pub replication_factor: u64,
+    pub xfer_port: u32,
 }
 
 impl AppConfig {
@@ -57,6 +58,7 @@ impl Default for AppConfig {
             packet_size: 64 * 1024,
             block_size: 64 * 1024 * 1024,
             replication_factor: 3,
+            xfer_port: 50010,
         }
     }
 }

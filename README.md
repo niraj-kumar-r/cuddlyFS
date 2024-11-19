@@ -62,7 +62,7 @@ To install cuddlyFS as a library, add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cuddlyfs = "0.1.0-beta.1"
+cuddlyfs = "0.1.0-beta.2"
 ```
 
 or run:
@@ -148,7 +148,7 @@ Contributions are welcome! Feel free to open an issue or submit a pull request i
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License-2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Authors
 
