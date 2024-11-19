@@ -1,11 +1,11 @@
-use std::task::Poll;
+use std::{future::Future, pin::Pin, task::Poll};
 
 use tokio::io::AsyncRead;
 
 use crate::{
     cuddlyproto::{
         client_data_node_service_client::ClientDataNodeServiceClient,
-        file_service_client::FileServiceClient, BlockWithLocations, OpenFileRequest,
+        file_service_client::FileServiceClient, BlockWithLocations, OpenFileRequest, Packet,
         ReadBlockRequest,
     },
     errors::CuddlyResult,
@@ -17,6 +17,7 @@ pub struct CuddlyReader {
     total_file_size: u64,
     current_block_offset: u64,
     current_block_index: usize,
+    current_future: Option<Pin<Box<dyn Future<Output = Result<Packet, std::io::Error>> + Send>>>,
 }
 
 impl CuddlyReader {
@@ -54,13 +55,12 @@ impl CuddlyReader {
                 .cmp(&b.block.as_ref().unwrap().seq)
         });
 
-        // let current_block_seq = blocks_with_locations[0].block.as_ref().unwrap().seq;
-
         Ok(Self {
             blocks_with_locations,
             total_file_size,
             current_block_offset: 0,
             current_block_index: 0,
+            current_future: None,
         })
     }
 }
@@ -83,37 +83,50 @@ impl AsyncRead for CuddlyReader {
 
         let data_node_address = current_block_with_location.locations[0].clone();
 
-        let fut = async move {
-            let mut data_node_client = ClientDataNodeServiceClient::connect(data_node_address)
-                .await
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        if self_mut.current_future.is_none() {
+            let fut = async move {
+                let mut data_node_client = ClientDataNodeServiceClient::connect(data_node_address)
+                    .await
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
-            let mut stream = data_node_client
-                .read_block(ReadBlockRequest { block: Some(block) })
-                .await
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
-                .into_inner();
+                let mut stream = data_node_client
+                    .read_block(ReadBlockRequest { block: Some(block) })
+                    .await
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+                    .into_inner();
 
-            while let Some(packet) = stream.message().await.map_err(|e| {
-                std::io::Error::new(std::io::ErrorKind::Other, format!("Stream error: {e}"))
-            })? {
-                let data = packet.payload;
-                buf.put_slice(&data);
+                while let Some(packet) = stream.message().await.map_err(|e| {
+                    std::io::Error::new(std::io::ErrorKind::Other, format!("Stream error: {e}"))
+                })? {
+                    return Ok(packet);
+                }
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::UnexpectedEof,
+                    "End of stream",
+                ))
+            };
+            self_mut.current_future = Some(Box::pin(fut));
+        }
 
-                self_mut.current_block_offset += packet.size as u64;
+        let fut = self_mut.current_future.as_mut().unwrap();
+        match fut.as_mut().poll(cx) {
+            Poll::Ready(Ok(packet)) => {
+                buf.put_slice(&packet.payload);
+                self_mut.current_block_offset += packet.size;
 
                 if packet.is_last {
                     self_mut.current_block_index += 1;
                     self_mut.current_block_offset = 0;
-                    break;
+                    self_mut.current_future = None;
                 }
-            }
-            Ok(())
-        };
 
-        match tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(fut)) {
-            Ok(()) => Poll::Ready(Ok(())),
-            Err(e) => Poll::Ready(Err(e)),
+                Poll::Ready(Ok(()))
+            }
+            Poll::Ready(Err(e)) => {
+                self_mut.current_future = None;
+                Poll::Ready(Err(e))
+            }
+            Poll::Pending => Poll::Pending,
         }
     }
 }
