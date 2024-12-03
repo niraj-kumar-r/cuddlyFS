@@ -183,7 +183,7 @@ impl CuddlyWriter {
     async fn write_block(&mut self) -> CuddlyResult<()> {
         let (block, targets) = self.next_block().await?;
 
-        let mut datanode = TcpStream::connect(&targets[0].ip_address).await?;
+        let mut datanode = TcpStream::connect(&targets[0].socket_address).await?;
         let mut buffer = vec![];
         let op = cuddlyproto::Operation {
             op: cuddlyproto::operation::OpCode::WriteBlock as i32,
@@ -194,7 +194,10 @@ impl CuddlyWriter {
 
         let write_op = cuddlyproto::WriteBlockOperation {
             block: Some(block),
-            targets: targets.iter().map(|info| info.ip_address.clone()).collect(),
+            targets: targets
+                .iter()
+                .map(|info| info.socket_address.clone())
+                .collect(),
         };
         write_op.encode_length_delimited(&mut buffer)?;
         datanode.write_all(&buffer).await?;

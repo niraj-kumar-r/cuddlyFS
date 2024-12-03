@@ -47,7 +47,7 @@ async fn main() -> CuddlyResult<()> {
                 let used_percentage = 100.0 * (datanode.used_capacity as f64)
                     / (datanode.total_capacity - datanode.used_capacity) as f64
                     + datanode.used_capacity as f64;
-                println!("\tAddress: {}", datanode.ip_address);
+                println!("\tAddress: {}", datanode.socket_address);
                 println!(
                     "\tAvailable storage (kB): {}",
                     (datanode.total_capacity - datanode.used_capacity)

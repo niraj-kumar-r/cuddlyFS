@@ -1,6 +1,6 @@
 use std::{
     collections::HashSet,
-    net::IpAddr,
+    net::SocketAddr,
     num::NonZero,
     str::FromStr,
     sync::{Mutex, RwLock},
@@ -126,11 +126,11 @@ impl DataRegistry {
                 .put(Uuid::parse_str(&uuid).unwrap(), Utc::now());
 
             match r {
-                Some(previous_instant) => {
-                    info!(
-                        "Updated heartbeat for {}. Previous heartbeat was at {:?}",
-                        uuid, previous_instant
-                    );
+                Some(_previous_instant) => {
+                    // info!(
+                    //     "Updated heartbeat for {}. Previous heartbeat was at {:?}",
+                    //     uuid, previous_instant
+                    // );
                 }
                 None => {
                     info!("New Datanode Connected with uuid: {}", uuid);
@@ -139,10 +139,10 @@ impl DataRegistry {
 
             let mut datanode_to_blocks = self.datanode_to_blocks.write().unwrap();
             let datanode_info = DatanodeInfo {
-                ip_address: datanode_registration
+                socket_address: datanode_registration
                     .datanode_id
                     .as_ref()
-                    .and_then(|id| IpAddr::from_str(&id.ip_addr).ok())
+                    .and_then(|id| SocketAddr::from_str(&id.socket_addr).ok())
                     .unwrap(),
 
                 datanode_uuid: Uuid::parse_str(&datanode_uuid.as_ref().unwrap()).unwrap(),

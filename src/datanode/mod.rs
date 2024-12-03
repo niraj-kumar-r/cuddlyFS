@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{net::SocketAddr, sync::Arc};
 
 use crate::{
     config::APP_CONFIG,
@@ -41,7 +41,7 @@ impl Datanode {
         let datanode_uuid = Uuid::new_v4();
         Ok(Datanode {
             datanode_id: cuddlyproto::DatanodeIdProto {
-                ip_addr: local_ip().unwrap().to_string(),
+                socket_addr: SocketAddr::new(local_ip().unwrap(), 50052).to_string(),
                 host_name: hostname::get()
                     .unwrap_or_else(|_| "unknown".into())
                     .to_string_lossy()
@@ -99,11 +99,12 @@ impl Datanode {
         &self,
         received_block_tx: tokio::sync::mpsc::Sender<cuddlyproto::Block>,
     ) -> CuddlyResult<()> {
-        let listener = TcpListener::bind(format!(
-            "{}:{}",
-            self.datanode_id.ip_addr, self.datanode_id.xfer_port
-        ))
-        .await?;
+        // let listener = TcpListener::bind(format!(
+        //     "{}:{}",
+        //     self.datanode_id.socket_addr, self.datanode_id.xfer_port
+        // ))
+        // .await?;
+        let listener = TcpListener::bind(self.datanode_id.socket_addr.clone()).await?;
 
         loop {
             tokio::select! {
@@ -153,7 +154,7 @@ impl Datanode {
                 _ = heartbeat_interval.tick() => {
                     match self.send_heartbeat().await {
                         Ok(_) => {
-                            info!("Heartbeat sent successfully");
+                            // info!("Heartbeat sent successfully");
                             consecutive_errors = 0;
                         }
                         Err(e) => {
@@ -228,7 +229,7 @@ impl Datanode {
         if let Some(block) = block {
             info!("New block received {:?}", block);
             let message = cuddlyproto::BlockReceivedRequest {
-                address: self.datanode_id.ip_addr.to_string(),
+                address: self.datanode_id.socket_addr.to_string(),
                 block: Some(block),
             };
             let mut client = self.get_node_service_client()?;

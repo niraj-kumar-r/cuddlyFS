@@ -1,4 +1,4 @@
-use std::net::IpAddr;
+use std::net::SocketAddr;
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -7,7 +7,7 @@ use crate::cuddlyproto;
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub(crate) struct DatanodeInfo {
-    pub(crate) ip_address: IpAddr,
+    pub(crate) socket_address: SocketAddr,
     pub(crate) datanode_uuid: Uuid,
     pub(crate) total_capacity: u64,
     pub(crate) used_capacity: u64,
@@ -16,21 +16,21 @@ pub(crate) struct DatanodeInfo {
 #[allow(dead_code)]
 impl DatanodeInfo {
     pub(crate) fn new(
-        ip_address: impl Into<IpAddr>,
+        socket_address: impl Into<SocketAddr>,
         datanode_uuid: impl Into<Uuid>,
         total_capacity: u64,
         used_capacity: u64,
     ) -> Self {
         Self {
-            ip_address: ip_address.into(),
+            socket_address: socket_address.into(),
             datanode_uuid: datanode_uuid.into(),
             total_capacity,
             used_capacity,
         }
     }
 
-    pub(crate) fn ip_address(&self) -> &IpAddr {
-        &self.ip_address
+    pub(crate) fn socket_address(&self) -> &SocketAddr {
+        &self.socket_address
     }
 
     pub(crate) fn datanode_uuid(&self) -> &Uuid {
@@ -54,8 +54,8 @@ impl std::fmt::Display for DatanodeInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "DatanodeInfo {{ ip_address: {}, datanode_uuid: {}, total_capacity: {}, used_capacity: {} }}",
-            self.ip_address, self.datanode_uuid, self.total_capacity, self.used_capacity
+            "DatanodeInfo {{ socket_address: {}, datanode_uuid: {}, total_capacity: {}, used_capacity: {} }}",
+            self.socket_address, self.datanode_uuid, self.total_capacity, self.used_capacity
         )
     }
 }
@@ -63,13 +63,13 @@ impl std::fmt::Display for DatanodeInfo {
 impl From<cuddlyproto::DatanodeInfo> for DatanodeInfo {
     fn from(value: cuddlyproto::DatanodeInfo) -> Self {
         let cuddlyproto::DatanodeInfo {
-            ip_address,
+            socket_address,
             datanode_uuid,
             total_capacity,
             used_capacity,
         } = value;
         Self {
-            ip_address: ip_address.parse().unwrap(),
+            socket_address: socket_address.parse().unwrap(),
             datanode_uuid: Uuid::parse_str(&datanode_uuid).unwrap(),
             total_capacity,
             used_capacity,
@@ -80,15 +80,15 @@ impl From<cuddlyproto::DatanodeInfo> for DatanodeInfo {
 impl From<DatanodeInfo> for cuddlyproto::DatanodeInfo {
     fn from(value: DatanodeInfo) -> Self {
         let DatanodeInfo {
-            ip_address,
+            socket_address,
             datanode_uuid,
             total_capacity,
             used_capacity,
         } = value;
-        let ip_address = ip_address.to_string();
+        let socket_address = socket_address.to_string();
         let datanode_uuid = datanode_uuid.to_string();
         Self {
-            ip_address,
+            socket_address,
             datanode_uuid,
             total_capacity,
             used_capacity,

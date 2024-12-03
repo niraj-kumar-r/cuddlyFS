@@ -10,7 +10,6 @@ use crate::{
         OpenFileResponse, ReportDatanodesRequest, ReportDatanodesResponse, StatusCode,
     },
     errors::CuddlyError,
-    APP_CONFIG,
 };
 
 use super::namenode_data_registry::DataRegistry;
@@ -108,13 +107,7 @@ impl FileService for NamenodeFileService {
                         block: Some(block.into()),
                         locations: locations
                             .into_iter()
-                            .map(|location| {
-                                format!(
-                                    "{}:{}",
-                                    location.ip_address.to_string(),
-                                    APP_CONFIG.xfer_port,
-                                )
-                            })
+                            .map(|location| location.socket_address.to_string())
                             .collect(),
                     })
                     .collect();
