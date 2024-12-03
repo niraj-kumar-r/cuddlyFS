@@ -7,6 +7,7 @@ use crate::{
 };
 
 use chrono::Utc;
+use datanode_data_handler::DatanodeDataHandler;
 use local_ip_address::local_ip;
 use log::{error, info, warn};
 use tokio::{
@@ -121,19 +122,20 @@ impl Datanode {
         tcp_stream: TcpStream,
         block_sender: tokio::sync::mpsc::Sender<cuddlyproto::Block>,
     ) {
-        let storage = Arc::clone(&self.datanode_data_registry);
+        let data_registry = Arc::clone(&self.datanode_data_registry);
         let packet_size = APP_CONFIG.packet_size;
 
-        // tokio::spawn(async move {
-        //     let mut handler = DataTransferHandler::new(tcp_stream, storage, packet_size, block_sender);
-        //     match handler.handle().await {
-        //         Ok(()) => (),
-        //         Err(e) => error!(
-        //             "An error occured while handling data server request: {:?}",
-        //             e
-        //         ),
-        //     }
-        // });
+        tokio::spawn(async move {
+            let mut handler =
+                DatanodeDataHandler::new(tcp_stream, data_registry, packet_size, block_sender);
+            match handler.handle().await {
+                Ok(()) => (),
+                Err(e) => error!(
+                    "An error occured while handling data server request: {:?}",
+                    e
+                ),
+            }
+        });
     }
 
     async fn run_namenode_services(
