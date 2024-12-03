@@ -20,6 +20,7 @@ use uuid::Uuid;
 use self::cuddlyproto::{node_service_client::NodeServiceClient, StorageReportProto};
 
 mod datanode_client_service;
+mod datanode_data_handler;
 mod datanode_data_registry;
 mod datanode_disk_info;
 
