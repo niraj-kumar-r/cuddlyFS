@@ -107,9 +107,9 @@ impl DfsWriter {
             match response {
                 Ok(_) => return Ok(()),
                 Err(status) => {
-                    // we set code to unavailable if not all blocks have been
-                    // replicated yet. Wait for some time, maybe the block will be
-                    // eventually replicated
+                    // The code is set to Unavailable if not all blocks have been
+                    // replicated yet. Wait for some time to allow the block to
+                    // be eventually replicated.
                     if status.code() == tonic::Code::Unavailable {
                         time::sleep(sleep_time).await;
                         sleep_time *= 2;
@@ -161,9 +161,9 @@ impl DfsWriter {
             match response {
                 Ok(message) => return Ok(message.into_inner().block_with_targets.unwrap()),
                 Err(status) => {
-                    // we set code to unavailable if not all blocks have been
-                    // replicated yet. Wait for some time, maybe the block will be
-                    // eventually replicated
+                    // The code is set to Unavailable if the blocks have not been
+                    // fully replicated yet. Wait for some time to allow the block
+                    // to be eventually replicated.
                     if status.code() == tonic::Code::Unavailable {
                         time::sleep(sleep_time).await;
                         sleep_time *= 2;
