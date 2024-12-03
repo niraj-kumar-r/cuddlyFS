@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use prost::Message;
+use tokio::fs;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::{
@@ -11,6 +12,9 @@ use tracing::debug;
 
 use crate::block::Block;
 use crate::{errors::CuddlyResult, utils::parse_message};
+
+use self::cuddlyproto::WriteBlockOperation;
+use self::cuddlyproto::WriteBlockResponse;
 
 use super::{
     cuddlyproto::{self, operation::OpCode, Packet, ReadBlockOperation},
@@ -91,6 +95,34 @@ impl DatanodeDataHandler {
     }
 
     async fn handle_write(&mut self) -> CuddlyResult<()> {
+        let WriteBlockOperation { block, targets } =
+            parse_message::<WriteBlockOperation>(&mut self.stream).await?;
+        let block: Block = block.unwrap().into();
+        let block_file = self.data_registry.start_block_creation(&block).await?;
+
+        match self.write_block(block_file, &block, &targets[1..]).await {
+            Ok(()) => {
+                self.data_registry.finish_block_creation(&block).await?;
+                let response = WriteBlockResponse { success: true };
+                let mut buffer = vec![];
+                response.encode_length_delimited(&mut buffer)?;
+                self.stream.write_all(&buffer).await?;
+                self.stream.flush().await?;
+                Ok(())
+            }
+            Err(e) => {
+                self.data_registry.abort_block_creation(&block).await?;
+                Err(e)
+            }
+        }
+    }
+
+    async fn write_block(
+        &mut self,
+        mut block_file: fs::File,
+        block: &Block,
+        targets: &[String],
+    ) -> CuddlyResult<()> {
         todo!()
     }
 }
