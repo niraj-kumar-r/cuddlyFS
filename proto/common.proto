@@ -86,13 +86,3 @@ message BlockWithLocations {
   Block block = 1;
   repeated string locations = 2;
 }
-
-message Packet {
-  uint32 sequence_number = 1;
-  uint64 size = 2;
-  bytes payload = 3;
-  string checksum = 4;
-  bool is_last = 5;
-  string block_id = 6;
-  uint64 block_seq = 7;
-}
