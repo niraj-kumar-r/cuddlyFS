@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::{env, net::SocketAddr, sync::Arc};
 
 use crate::{
     config::APP_CONFIG,
@@ -39,9 +39,16 @@ impl Datanode {
         shutdown_send: mpsc::UnboundedSender<i8>,
     ) -> CuddlyResult<Self> {
         let datanode_uuid = Uuid::new_v4();
+        let port = env::var("PORT")
+            .unwrap_or_else(|_| "50052".to_string())
+            .parse::<u16>()
+            .unwrap_or(50052);
+        let socket = SocketAddr::new(local_ip().unwrap(), port);
+        info!("Datanode socket address: {}", socket);
+
         Ok(Datanode {
             datanode_id: cuddlyproto::DatanodeIdProto {
-                socket_addr: SocketAddr::new(local_ip().unwrap(), 50052).to_string(),
+                socket_addr: socket.to_string(),
                 host_name: hostname::get()
                     .unwrap_or_else(|_| "unknown".into())
                     .to_string_lossy()

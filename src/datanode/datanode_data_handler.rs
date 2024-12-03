@@ -10,6 +10,7 @@ use tokio::{
     net::TcpStream,
 };
 use tracing::debug;
+use tracing::info;
 use tracing::warn;
 
 use crate::block::Block;
@@ -46,6 +47,7 @@ impl DatanodeDataHandler {
     }
 
     pub(crate) async fn handle(&mut self) -> CuddlyResult<()> {
+        info!("Handling data server request");
         match self.stream.get_ref().peer_addr() {
             Ok(peer_addr) => {
                 debug!("Received request from {:?}", peer_addr);

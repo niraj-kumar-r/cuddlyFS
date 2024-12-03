@@ -6,6 +6,7 @@ use tokio::net::TcpStream;
 use tokio::time;
 
 use tonic::transport::Channel;
+use tracing::info;
 
 use crate::cuddlyproto::file_service_client::FileServiceClient;
 use crate::errors::{CuddlyError, CuddlyResult};
@@ -143,6 +144,10 @@ impl CuddlyWriter {
                 .unwrap()
         };
         self.file_started = true;
+        info!(
+            "Starting new Block. Namenode returned target: {:?}",
+            targets
+        );
 
         Ok((block.unwrap(), targets))
     }

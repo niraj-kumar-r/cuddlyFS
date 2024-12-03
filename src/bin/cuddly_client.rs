@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::{env, process::exit};
 
 use clap::{arg, command, Command};
 use cuddlyfs::{
@@ -9,6 +9,9 @@ use cuddlyfs::{
 
 #[tokio::main]
 async fn main() -> CuddlyResult<()> {
+    env::set_var("RUST_LOG", "info");
+    env::set_var("RUN_MODE", "docker");
+    env_logger::init();
     let namenode_rpc_address = APP_CONFIG.datanode.namenode_rpc_address.clone();
 
     let dfs = CuddlyClient::new(namenode_rpc_address).await?;

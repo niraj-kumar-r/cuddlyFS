@@ -2,6 +2,7 @@ use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 
 use tonic::transport::Channel;
+use tracing::info;
 
 use crate::cuddlyproto;
 use crate::cuddlyproto::file_service_client::FileServiceClient;
@@ -17,10 +18,13 @@ pub struct CuddlyClient {
 impl CuddlyClient {
     pub async fn new(namenode_rpc_address: String) -> CuddlyResult<Self> {
         match FileServiceClient::connect(String::from(namenode_rpc_address.clone())).await {
-            Ok(client) => Ok(Self {
-                namenode_rpc_address,
-                namenode_client: client,
-            }),
+            Ok(client) => {
+                info!("Connected to namenode at {}", namenode_rpc_address);
+                Ok(Self {
+                    namenode_rpc_address,
+                    namenode_client: client,
+                })
+            }
             Err(err) => {
                 return Err(CuddlyError::RPCError(format!(
                     "Could not connect to namenode: {}",
