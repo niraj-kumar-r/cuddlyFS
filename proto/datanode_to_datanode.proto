@@ -6,5 +6,5 @@ import "common.proto";
 import "client_to_datanode.proto";
 
 service DatanodeDataNodeService {
-  rpc WriteDatanodeBlock (stream Packet) returns (WriteBlockResponse);
+  rpc ReplicateDatanodeBlock (stream Packet) returns (WriteBlockResponse);
 }
