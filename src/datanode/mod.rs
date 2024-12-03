@@ -99,7 +99,11 @@ impl Datanode {
         &self,
         received_block_tx: tokio::sync::mpsc::Sender<cuddlyproto::Block>,
     ) -> CuddlyResult<()> {
-        let listener = TcpListener::bind(self.datanode_id.ip_addr.clone()).await?;
+        let listener = TcpListener::bind(format!(
+            "{}:{}",
+            self.datanode_id.ip_addr, self.datanode_id.xfer_port
+        ))
+        .await?;
 
         loop {
             tokio::select! {
