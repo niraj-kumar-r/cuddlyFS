@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::sync::Arc;
 
 use crate::{
     config::APP_CONFIG,
@@ -15,7 +15,7 @@ use tokio::{
     sync::mpsc,
 };
 use tokio_util::sync::CancellationToken;
-use tonic::transport::{Channel, Server};
+use tonic::transport::Channel;
 use uuid::Uuid;
 
 use self::cuddlyproto::{node_service_client::NodeServiceClient, StorageReportProto};
