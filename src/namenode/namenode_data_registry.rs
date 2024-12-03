@@ -323,6 +323,7 @@ impl DataRegistry {
 
         let mut target_nodes = HashSet::new();
         let mut available_nodes = self.get_alive_datanodes();
+        info!("Available nodes: {:?}", available_nodes);
         available_nodes.shuffle(&mut thread_rng());
 
         for node_info in available_nodes {
