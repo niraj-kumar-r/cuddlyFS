@@ -11,6 +11,7 @@ fn main() {
                 "proto/datanode.proto",
                 "proto/namenode.proto",
                 "proto/client_to_datanode.proto",
+                "proto/datanode_to_datanode.proto",
             ],
             &["proto"],
         )

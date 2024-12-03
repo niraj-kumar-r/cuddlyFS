@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package cuddlyproto;
+
+import "common.proto";
+import "client_to_datanode.proto";
+
+service DatanodeDataNodeService {
+  rpc WriteDatanodeBlock (stream Packet) returns (WriteBlockResponse);
+}
