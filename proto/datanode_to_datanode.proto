@@ -5,6 +5,6 @@ package cuddlyproto;
 import "common.proto";
 import "client_to_datanode.proto";
 
-service DatanodeDataNodeService {
+service DatanodeDatanodeService {
   rpc ReplicateDatanodeBlock (stream Packet) returns (WriteBlockResponse);
 }
