@@ -26,7 +26,7 @@ async fn new_backup_file() -> CuddlyResult<BufStream<File>> {
     Ok(BufStream::new(file))
 }
 
-pub struct DfsWriter {
+pub struct CuddlyWriter {
     namenode_client: FileServiceClient<Channel>,
     block_size: u64,
     packet_size: u64,
@@ -36,7 +36,7 @@ pub struct DfsWriter {
     backup_buffer: BufStream<File>,
 }
 
-impl DfsWriter {
+impl CuddlyWriter {
     pub async fn create(path: impl Into<String>, namenode_rpc_address: &str) -> CuddlyResult<Self> {
         let client = match FileServiceClient::connect(String::from(namenode_rpc_address)).await {
             Ok(client) => client,
