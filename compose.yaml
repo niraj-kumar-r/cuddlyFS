@@ -21,6 +21,7 @@ services:
         container_name: cuddlyfs_datanode1
         ports:
             - 0.0.0.0:50052:50052
+            - 0.0.0.0:60052:60052
         networks:
             - cuddlyfs_network
         depends_on:
@@ -36,6 +37,7 @@ services:
         container_name: cuddlyfs_datanode2
         ports:
             - 0.0.0.0:50053:50053
+            - 0.0.0.0:60053:60053
         networks:
             - cuddlyfs_network
         depends_on:
@@ -51,6 +53,7 @@ services:
         container_name: cuddlyfs_datanode3
         ports:
             - 0.0.0.0:50054:50054
+            - 0.0.0.0:60054:60054
         networks:
             - cuddlyfs_network
         depends_on:

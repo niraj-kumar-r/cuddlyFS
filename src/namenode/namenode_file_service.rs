@@ -133,7 +133,6 @@ impl FileService for NamenodeFileService {
         debug!("Received request to create file: {:?}", request);
         let request = request.into_inner();
         let res = self.data_registry.start_file_create(&request.file_path);
-        info!("Start file create response: {:?}", res);
         match res {
             Ok(Some((block, targets))) => {
                 let block = Some(block.into());

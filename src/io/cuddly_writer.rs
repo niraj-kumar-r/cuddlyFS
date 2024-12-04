@@ -5,7 +5,7 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, BufStream, SeekFrom};
 use tokio::net::TcpStream;
 use tokio::time;
 
-use log::{debug, info};
+use log::{debug, info, warn};
 use tonic::transport::Channel;
 
 use crate::cuddlyproto::file_service_client::FileServiceClient;
@@ -193,8 +193,35 @@ impl CuddlyWriter {
 
     async fn write_block(&mut self) -> CuddlyResult<()> {
         let (block, targets) = self.next_block().await?;
+        warn!("Make sure to remove http for tcp connections");
+        warn!("Changing socket address to localhost for testing purposes in docker");
+        let targets = targets
+            .into_iter()
+            .map(|info| cuddlyproto::DatanodeInfo {
+                socket_address: format!(
+                    "{}:{}",
+                    "localhost",
+                    info.socket_address
+                        .split(':')
+                        .last()
+                        .expect("Could not parse port")
+                        .parse::<u16>()
+                        .expect("Could not parse port")
+                        + 10000
+                ),
+                datanode_uuid: info.datanode_uuid,
+                used_capacity: info.used_capacity,
+                total_capacity: info.total_capacity,
+            })
+            .collect::<Vec<_>>();
+        warn!("Now using targets: {:?}", targets);
 
+        debug!(
+            "Trying connection to datanode: {:?}",
+            targets[0].socket_address
+        );
         let mut datanode = TcpStream::connect(&targets[0].socket_address).await?;
+        debug!("Connected to datanode: {:?}", targets[0].socket_address);
         let mut buffer = vec![];
         let op = cuddlyproto::Operation {
             op: cuddlyproto::operation::OpCode::WriteBlock as i32,

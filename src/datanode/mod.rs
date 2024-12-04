@@ -8,7 +8,7 @@ use crate::{
 
 use chrono::Utc;
 use datanode_data_handler::DatanodeDataHandler;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::mpsc,
@@ -114,12 +114,25 @@ impl Datanode {
         //     self.datanode_id.socket_addr, self.datanode_id.xfer_port
         // ))
         // .await?;
-        let listener = TcpListener::bind(self.datanode_id.socket_addr.clone()).await?;
+        let bind_addr = format!(
+            "0.0.0.0:{}",
+            self.datanode_id
+                .socket_addr
+                .split(":")
+                .last()
+                .expect("Could not get port")
+                .parse::<u16>()
+                .expect("Could not parse port")
+                + 10000
+        );
+        let listener = TcpListener::bind(bind_addr.clone()).await?;
+        info!("Listening on {} for TCP requests", bind_addr);
 
         loop {
             tokio::select! {
                 incoming = listener.accept() => {
-                    let (tcp_stream, _socket_addr) = incoming?;
+                    let (tcp_stream, socket_addr) = incoming?;
+                    info!("New connection from {:?}", socket_addr);
                     let block_sender = received_block_tx.clone();
                     self.handle_incoming_request(tcp_stream, block_sender);
                 }
