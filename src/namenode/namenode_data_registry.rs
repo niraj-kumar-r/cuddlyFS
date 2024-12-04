@@ -16,7 +16,7 @@ use uuid::Uuid;
 
 use crate::{
     block::Block,
-    cuddlyproto, datanode,
+    cuddlyproto,
     errors::{CuddlyError, CuddlyResult},
     utils::key_to_data_and_id_map::KeyToDataAndIdMap,
     APP_CONFIG,
@@ -65,6 +65,7 @@ const HEARTBEAT_RECHECK_INTERVAL: u64 = 20;
 #[derive(Debug)]
 pub(super) struct DataRegistry {
     heartbeat_cache: Mutex<LruCache<Uuid, DateTime<Utc>>>,
+    socket_to_uuid: RwLock<LruCache<SocketAddr, Uuid>>,
     cancel_token: CancellationToken,
     block_to_datanodes: RwLock<KeyToDataAndIdMap<Uuid, Block, Uuid>>,
     datanode_to_blocks: RwLock<KeyToDataAndIdMap<Uuid, DatanodeInfo, Uuid>>,
@@ -84,6 +85,7 @@ impl DataRegistry {
         let data_registry = Self {
             // start_time: Utc::now(),
             heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
+            socket_to_uuid: RwLock::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
             block_to_datanodes: RwLock::new(KeyToDataAndIdMap::new()),
             datanode_to_blocks: RwLock::new(KeyToDataAndIdMap::new()),
             namenode_progress_tracker: RwLock::new(NamenodeProgressTracker::new()),
@@ -118,6 +120,13 @@ impl DataRegistry {
             .as_ref()
             .map(|id| id.datanode_uuid.clone());
 
+        let datanode_socket = datanode_registration
+            .datanode_id
+            .as_ref()
+            .map(|id| SocketAddr::from_str(&id.socket_addr).ok())
+            .unwrap()
+            .unwrap();
+
         if let Some(uuid) = &datanode_uuid {
             let r = self
                 .heartbeat_cache
@@ -150,6 +159,9 @@ impl DataRegistry {
                 used_capacity: storage_reports.iter().map(|report| report.dfs_used).sum(),
             };
             datanode_to_blocks.update_data(datanode_info.datanode_uuid, datanode_info);
+
+            let mut socket_to_uuid = self.socket_to_uuid.write().unwrap();
+            socket_to_uuid.put(datanode_socket, Uuid::parse_str(&uuid).unwrap());
             let response = cuddlyproto::HeartbeatResponse {
                 status: Some(cuddlyproto::StatusCode {
                     success: true,
@@ -195,6 +207,15 @@ impl DataRegistry {
 
         for uuid in to_remove {
             cache.pop(&uuid);
+            let socket_to_uuid = self.socket_to_uuid.read().unwrap();
+            let socket = socket_to_uuid
+                .iter()
+                .find(|(_, v)| v == &&uuid)
+                .map(|(k, _)| k);
+            if let Some(socket) = socket {
+                let mut socket_to_uuid = self.socket_to_uuid.write().unwrap();
+                socket_to_uuid.pop(socket);
+            }
             info!(
                 "Removed Datanode with uuid (did not receive heartbeat): {}",
                 uuid
@@ -214,9 +235,22 @@ impl DataRegistry {
     pub(crate) fn block_received(&self, node_id: &str, block: &Block) -> CuddlyResult<()> {
         info!("Block received from node_id: {}, {}", node_id, block);
 
-        let datanode_uuid = match Uuid::parse_str(node_id) {
-            Ok(datanode_uuid) => datanode_uuid,
-            Err(_) => return Err(CuddlyError::FSError(format!("Invalid UUID: {}", node_id))),
+        // let datanode_uuid = match Uuid::parse_str(node_id) {
+        //     Ok(datanode_uuid) => datanode_uuid,
+        //     Err(_) => return Err(CuddlyError::FSError(format!("Invalid UUID: {}", node_id))),
+        // };
+
+        let datanode_uuid = {
+            let mut socket_to_uuid = self.socket_to_uuid.write().unwrap();
+            match socket_to_uuid.get(&SocketAddr::from_str(node_id).unwrap()) {
+                Some(uuid) => uuid.clone(),
+                None => {
+                    return Err(CuddlyError::FSError(format!(
+                        "Block received from unregistered datanode '{}'.",
+                        node_id
+                    )))
+                }
+            }
         };
 
         let new_reported = {

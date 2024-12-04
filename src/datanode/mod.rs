@@ -8,7 +8,7 @@ use crate::{
 
 use chrono::Utc;
 use datanode_data_handler::DatanodeDataHandler;
-use log::{debug, error, info, warn};
+use log::{error, info, warn};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::mpsc,

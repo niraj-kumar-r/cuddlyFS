@@ -85,7 +85,7 @@ impl CuddlyClient {
         }
         writer.flush().await?;
         writer.shutdown().await?;
-
+        info!("Successfully uploaded file from {}", src);
         Ok(())
     }
 
