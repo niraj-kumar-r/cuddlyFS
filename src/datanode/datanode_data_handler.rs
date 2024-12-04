@@ -101,8 +101,10 @@ impl DatanodeDataHandler {
     async fn handle_write(&mut self) -> CuddlyResult<()> {
         let WriteBlockOperation { block, targets } =
             parse_message::<WriteBlockOperation>(&mut self.stream).await?;
+        debug!("Received write request for block {:?}", block);
         let block: Block = block.unwrap().into();
         let block_file = self.data_registry.start_block_creation(&block).await?;
+        debug!("Block file created successfully");
 
         match self.write_block(block_file, &block, &targets[1..]).await {
             Ok(()) => {
@@ -112,10 +114,12 @@ impl DatanodeDataHandler {
                 response.encode_length_delimited(&mut buffer)?;
                 self.stream.write_all(&buffer).await?;
                 self.stream.flush().await?;
+                info!("Block written successfully");
                 Ok(())
             }
             Err(e) => {
                 self.data_registry.abort_block_creation(&block).await?;
+                warn!("Failed to write block: {:?}", e);
                 Err(e)
             }
         }
@@ -127,6 +131,7 @@ impl DatanodeDataHandler {
         block: &Block,
         targets: &[String],
     ) -> CuddlyResult<()> {
+        debug!("Writing block to file");
         let mut block_file = BufWriter::new(block_file);
 
         let mut buffer = vec![];

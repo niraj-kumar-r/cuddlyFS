@@ -5,7 +5,7 @@ use std::{
     sync::Mutex,
 };
 
-use tokio::fs::File;
+use tokio::fs::{self, File};
 
 use crate::{
     block::Block,
@@ -94,6 +94,13 @@ impl DatanodeDataRegistry {
         }
 
         self.insert_in_progress_block(block)?;
+
+        if let Err(e) = fs::create_dir_all(&self.block_directory).await {
+            return Err(CuddlyError::IOError(format!(
+                "Failed to create directory: {}",
+                e
+            )));
+        }
         let block_path = self.block_directory.join(block.filename() + ".tmp");
         let file = match File::create(block_path).await {
             Ok(file) => file,

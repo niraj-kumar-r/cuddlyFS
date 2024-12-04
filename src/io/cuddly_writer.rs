@@ -195,8 +195,8 @@ impl CuddlyWriter {
         let (block, targets) = self.next_block().await?;
         warn!("Make sure to remove http for tcp connections");
         warn!("Changing socket address to localhost for testing purposes in docker");
-        let targets = targets
-            .into_iter()
+        let ext_targets = targets
+            .iter()
             .map(|info| cuddlyproto::DatanodeInfo {
                 socket_address: format!(
                     "{}:{}",
@@ -209,19 +209,19 @@ impl CuddlyWriter {
                         .expect("Could not parse port")
                         + 10000
                 ),
-                datanode_uuid: info.datanode_uuid,
+                datanode_uuid: info.datanode_uuid.clone(),
                 used_capacity: info.used_capacity,
                 total_capacity: info.total_capacity,
             })
             .collect::<Vec<_>>();
-        warn!("Now using targets: {:?}", targets);
+        warn!("Now using targets: {:?}", ext_targets);
 
         debug!(
             "Trying connection to datanode: {:?}",
-            targets[0].socket_address
+            ext_targets[0].socket_address
         );
-        let mut datanode = TcpStream::connect(&targets[0].socket_address).await?;
-        debug!("Connected to datanode: {:?}", targets[0].socket_address);
+        let mut datanode = TcpStream::connect(&ext_targets[0].socket_address).await?;
+        debug!("Connected to datanode: {:?}", ext_targets[0].socket_address);
         let mut buffer = vec![];
         let op = cuddlyproto::Operation {
             op: cuddlyproto::operation::OpCode::WriteBlock as i32,
@@ -234,7 +234,19 @@ impl CuddlyWriter {
             block: Some(block),
             targets: targets
                 .iter()
-                .map(|info| info.socket_address.clone())
+                .map(|info| {
+                    let sp = info.socket_address.split(':').collect::<Vec<_>>();
+                    let address = format!(
+                        "{}:{}",
+                        sp.first().expect("Could not parse address"),
+                        sp.last()
+                            .expect("Could not parse port")
+                            .parse::<u16>()
+                            .expect("Could not parse port")
+                            + 10000
+                    );
+                    address
+                })
                 .collect(),
         };
         write_op.encode_length_delimited(&mut buffer)?;
