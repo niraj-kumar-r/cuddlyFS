@@ -84,6 +84,7 @@ async fn main() -> CuddlyResult<()> {
                 .get_one::<String>("dst")
                 .ok_or_else(|| CuddlyError::ArgMissingError("Destination required".to_owned()))?;
             dfs.put(src, dst).await?;
+            println!("Successfully uploaded file from {}", src);
         }
         Some(("get", sub_matches)) => {
             let src = sub_matches

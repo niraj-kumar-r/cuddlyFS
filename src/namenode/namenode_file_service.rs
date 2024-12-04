@@ -98,6 +98,7 @@ impl FileService for NamenodeFileService {
         request: Request<OpenFileRequest>,
     ) -> Result<Response<OpenFileResponse>, Status> {
         let request = request.into_inner();
+        info!("Received request to open file: {:?}", request);
         let blocks_with_locations = self.data_registry.open_file(&request.file_path);
 
         match blocks_with_locations {
@@ -113,6 +114,7 @@ impl FileService for NamenodeFileService {
                     })
                     .collect();
 
+                debug!("Returning file open response with blocks: {:?}", res);
                 Ok(Response::new(OpenFileResponse {
                     blocks_with_locations: res,
                     status: Some(cuddlyproto::StatusCode {

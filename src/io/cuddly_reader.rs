@@ -1,5 +1,7 @@
 use std::io::Read;
 
+use log::debug;
+use log::warn;
 use prost::Message;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
@@ -35,7 +37,13 @@ impl CuddlyReader {
     ) -> CuddlyResult<Self> {
         let mut namenode_client =
             match FileServiceClient::connect(namenode_rpc_address.clone()).await {
-                Ok(client) => client,
+                Ok(client) => {
+                    debug!(
+                        "Connected to namenode at {} for file service",
+                        namenode_rpc_address
+                    );
+                    client
+                }
                 Err(e) => {
                     return Err(e.into());
                 }
@@ -63,7 +71,31 @@ impl CuddlyReader {
                 .cmp(&b.block.as_ref().unwrap().seq)
         });
 
+        warn!("changing socket address to localhost for testing with docker");
+        let blocks_with_locations: Vec<BlockWithLocations> = blocks_with_locations
+            .iter_mut()
+            .map(|b| {
+                b.locations = b
+                    .locations
+                    .iter()
+                    .map(|l| {
+                        format!(
+                            "{}:{}",
+                            "localhost",
+                            l.split(':')
+                                .last()
+                                .expect("Could not parse port")
+                                .parse::<u16>()
+                                .expect("Could not parse port")
+                                + 10000
+                        )
+                    })
+                    .collect();
+                b.clone()
+            })
+            .collect();
         let current_block = blocks_with_locations[0].block.as_ref().unwrap().clone();
+
         let mut current_reader =
             BufStream::new(TcpStream::connect(&blocks_with_locations[0].locations[0]).await?);
 

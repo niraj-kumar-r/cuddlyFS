@@ -1,4 +1,4 @@
-use log::info;
+use log::{debug, info};
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 
@@ -19,7 +19,7 @@ pub struct CuddlyClient {
 impl CuddlyClient {
     pub async fn new(_namenode_rpc_address: String) -> CuddlyResult<Self> {
         let addr = format!("{}:{}", "http://localhost", "50051");
-        info!("Trying to connect to namenode at {}", addr);
+        debug!("Trying to connect to namenode at {}", addr);
         match FileServiceClient::connect(addr.clone()).await {
             Ok(client) => {
                 info!("Connected to namenode at {}", addr);
@@ -91,6 +91,11 @@ impl CuddlyClient {
 
     pub async fn get(&self, src: &str, dst: &str) -> CuddlyResult<()> {
         let mut reader = CuddlyReader::open(self.namenode_rpc_address.clone(), src).await?;
+        // check if the file directory exists
+        let parent = std::path::Path::new(dst).parent().unwrap();
+        if !parent.exists() {
+            std::fs::create_dir_all(parent)?;
+        }
         let mut writer = BufWriter::new(File::create(dst).await?);
 
         let mut buf = vec![0; 128];
@@ -103,7 +108,7 @@ impl CuddlyClient {
         }
         writer.flush().await?;
         writer.shutdown().await?;
-
+        println!("Successfully downloaded file to {}", dst);
         Ok(())
     }
 }
