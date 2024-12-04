@@ -8,7 +8,7 @@ use cuddlyfs::{
 
 #[tokio::main]
 async fn main() -> CuddlyResult<()> {
-    env::set_var("RUST_LOG", "info");
+    env::set_var("RUST_LOG", "debug");
     env_logger::init();
     // let namenode_rpc_address = APP_CONFIG.datanode.namenode_rpc_address.clone();
 

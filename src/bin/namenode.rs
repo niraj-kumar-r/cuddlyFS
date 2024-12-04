@@ -7,7 +7,7 @@ use tokio_util::sync::CancellationToken;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() -> CuddlyResult<()> {
-    env::set_var("RUST_LOG", "info");
+    env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
     let addr: SocketAddr = APP_CONFIG.namenode.bind_address.parse().unwrap();

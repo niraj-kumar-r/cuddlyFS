@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use log::{debug, info};
 use tonic::{Request, Response, Status};
-use tracing::debug;
 
 use crate::{
     cuddlyproto::{
@@ -133,12 +133,12 @@ impl FileService for NamenodeFileService {
         debug!("Received request to create file: {:?}", request);
         let request = request.into_inner();
         let res = self.data_registry.start_file_create(&request.file_path);
-
+        info!("Start file create response: {:?}", res);
         match res {
             Ok(Some((block, targets))) => {
                 let block = Some(block.into());
                 let targets = targets.into_iter().map(|info| info.into()).collect();
-                debug!(
+                info!(
                     "Returning file create response with Block: {:?}, Targets: {:?}",
                     block, targets
                 );

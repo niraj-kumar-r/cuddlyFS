@@ -327,10 +327,13 @@ impl DataRegistry {
         available_nodes.shuffle(&mut thread_rng());
 
         for node_info in available_nodes {
+            info!("Checking node: {:?}", node_info);
             if node_info.free_capacity() > APP_CONFIG.block_size {
+                info!("Node has enough capacity: {:?}", node_info.free_capacity());
                 target_nodes.insert(node_info);
             }
             if target_nodes.len() as u64 >= APP_CONFIG.replication_factor as u64 {
+                info!("Found enough available nodes for file creation");
                 let block_id = self.next_block_id();
                 let seq = self
                     .namenode_progress_tracker
@@ -340,10 +343,12 @@ impl DataRegistry {
                 let block = Block::new(block_id, 0, seq);
                 let mut blocks = HashSet::new();
                 blocks.insert(block);
+                info!("Returning block: {:?}, targets: {:?}", block, target_nodes);
                 return Ok(Some((block, target_nodes.into_iter().collect())));
             }
         }
 
+        info!("Not enough available nodes found for file creation");
         Ok(None)
     }
 

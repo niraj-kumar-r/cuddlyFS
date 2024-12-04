@@ -2,8 +2,8 @@ use log::info;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 
+use log::error;
 use tonic::transport::Channel;
-use tracing::error;
 
 use crate::cuddlyproto;
 use crate::cuddlyproto::file_service_client::FileServiceClient;

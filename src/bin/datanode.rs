@@ -7,7 +7,7 @@ use tokio_util::sync::CancellationToken;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() -> CuddlyResult<()> {
-    env::set_var("RUST_LOG", "info");
+    env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
     let (shutdown_send, mut shutdown_recv) = mpsc::unbounded_channel::<i8>();

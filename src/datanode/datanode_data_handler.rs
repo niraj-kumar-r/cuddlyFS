@@ -1,5 +1,8 @@
 use std::sync::Arc;
 
+use log::debug;
+use log::info;
+use log::warn;
 use prost::Message;
 use tokio::fs;
 use tokio::io::AsyncReadExt;
@@ -9,9 +12,6 @@ use tokio::{
     io::{BufReader, BufStream},
     net::TcpStream,
 };
-use tracing::debug;
-use tracing::info;
-use tracing::warn;
 
 use crate::block::Block;
 use crate::{errors::CuddlyResult, utils::parse_message};

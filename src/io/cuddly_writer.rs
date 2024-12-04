@@ -5,8 +5,8 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, BufStream, SeekFrom};
 use tokio::net::TcpStream;
 use tokio::time;
 
+use log::{debug, info};
 use tonic::transport::Channel;
-use tracing::{debug, info};
 
 use crate::cuddlyproto::file_service_client::FileServiceClient;
 use crate::errors::{CuddlyError, CuddlyResult};
