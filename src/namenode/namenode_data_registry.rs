@@ -16,7 +16,7 @@ use uuid::Uuid;
 
 use crate::{
     block::Block,
-    cuddlyproto,
+    cuddlyproto, datanode,
     errors::{CuddlyError, CuddlyResult},
     utils::key_to_data_and_id_map::KeyToDataAndIdMap,
     APP_CONFIG,
