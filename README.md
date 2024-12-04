@@ -62,7 +62,7 @@ To install cuddlyFS as a library, add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cuddlyfs = "0.1.0-beta.2"
+cuddlyfs = "0.1.1"
 ```
 
 or run:
@@ -89,6 +89,8 @@ To compile cuddlyFS from source, follow these steps:
 3. Set up the configuration files in the `config` directory.
 
 ## Usage
+
+For detailed usage instructions, refer to the [rust docs](https://docs.rs/cuddlyfs/0.1.1/cuddlyfs/)
 
 To start the NameNode and DataNodes, use the following commands:
 
