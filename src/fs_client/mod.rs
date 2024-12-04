@@ -17,13 +17,14 @@ pub struct CuddlyClient {
 }
 
 impl CuddlyClient {
-    pub async fn new(namenode_rpc_address: String) -> CuddlyResult<Self> {
-        info!("Trying to connect to namenode at {}", namenode_rpc_address);
-        match FileServiceClient::connect(namenode_rpc_address.clone()).await {
+    pub async fn new(_namenode_rpc_address: String) -> CuddlyResult<Self> {
+        let addr = format!("{}:{}", "http://localhost", "50051");
+        info!("Trying to connect to namenode at {}", addr);
+        match FileServiceClient::connect(addr.clone()).await {
             Ok(client) => {
-                info!("Connected to namenode at {}", namenode_rpc_address);
+                info!("Connected to namenode at {}", addr);
                 Ok(Self {
-                    namenode_rpc_address,
+                    namenode_rpc_address: addr,
                     namenode_client: client,
                 })
             }
@@ -70,6 +71,7 @@ impl CuddlyClient {
     }
 
     pub async fn put(&self, src: &str, dst: impl Into<String>) -> CuddlyResult<()> {
+        info!("Uploading file from {}", src);
         let mut reader = BufReader::new(File::open(src).await?);
         let mut writer = CuddlyWriter::create(dst, &self.namenode_rpc_address).await?;
 

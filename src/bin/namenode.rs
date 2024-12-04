@@ -17,6 +17,7 @@ async fn main() -> CuddlyResult<()> {
 
     let running_namenode_handle = tokio::spawn(async move {
         info!("Starting namenode on {}", addr);
+        info!("Local Ip Address: {:?}", local_ip_address::local_ip());
         let _ = namenode.run(addr).await;
     });
 

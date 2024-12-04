@@ -6,7 +6,7 @@ use tokio::net::TcpStream;
 use tokio::time;
 
 use tonic::transport::Channel;
-use tracing::info;
+use tracing::{debug, info};
 
 use crate::cuddlyproto::file_service_client::FileServiceClient;
 use crate::errors::{CuddlyError, CuddlyResult};
@@ -40,7 +40,13 @@ pub struct CuddlyWriter {
 impl CuddlyWriter {
     pub async fn create(path: impl Into<String>, namenode_rpc_address: &str) -> CuddlyResult<Self> {
         let client = match FileServiceClient::connect(String::from(namenode_rpc_address)).await {
-            Ok(client) => client,
+            Ok(client) => {
+                debug!(
+                    "Connected to namenode at {} for file service",
+                    namenode_rpc_address
+                );
+                client
+            }
             Err(err) => {
                 return Err(CuddlyError::RPCError(format!(
                     "Could not connect to namenode: {}",

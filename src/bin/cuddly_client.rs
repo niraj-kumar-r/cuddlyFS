@@ -4,17 +4,15 @@ use clap::{arg, command, Command};
 use cuddlyfs::{
     errors::{CuddlyError, CuddlyResult},
     fs_client::CuddlyClient,
-    APP_CONFIG,
 };
 
 #[tokio::main]
 async fn main() -> CuddlyResult<()> {
     env::set_var("RUST_LOG", "info");
-    env::set_var("RUN_MODE", "docker");
     env_logger::init();
-    let namenode_rpc_address = APP_CONFIG.datanode.namenode_rpc_address.clone();
+    // let namenode_rpc_address = APP_CONFIG.datanode.namenode_rpc_address.clone();
 
-    let dfs = CuddlyClient::new(namenode_rpc_address).await?;
+    let dfs = CuddlyClient::new("http://10.30.42.182:50051".to_string()).await?;
 
     let matches = command!()
         .subcommand(Command::new("report").about("Reports basic filesystem information."))

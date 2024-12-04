@@ -5,7 +5,10 @@ services:
             dockerfile: Dockerfile.namenode
             target: final
         container_name: cuddlyfs_namenode
-        network_mode: "host"
+        ports:
+            - 0.0.0.0:50051:50051
+        networks:
+            - cuddlyfs_network
         environment:
             # corresponds to config/docker.yaml
             - RUN_MODE=docker
@@ -16,7 +19,10 @@ services:
             context: .
             dockerfile: Dockerfile.datanode
         container_name: cuddlyfs_datanode1
-        network_mode: "host"
+        ports:
+            - 0.0.0.0:50052:50052
+        networks:
+            - cuddlyfs_network
         depends_on:
             - namenode
         environment:
@@ -28,7 +34,10 @@ services:
             context: .
             dockerfile: Dockerfile.datanode
         container_name: cuddlyfs_datanode2
-        network_mode: "host"
+        ports:
+            - 0.0.0.0:50053:50053
+        networks:
+            - cuddlyfs_network
         depends_on:
             - namenode
         environment:
@@ -40,9 +49,16 @@ services:
             context: .
             dockerfile: Dockerfile.datanode
         container_name: cuddlyfs_datanode3
-        network_mode: "host"
+        ports:
+            - 0.0.0.0:50054:50054
+        networks:
+            - cuddlyfs_network
         depends_on:
             - namenode
         environment:
             - RUN_MODE=docker
             - PORT=50054
+
+networks:
+    cuddlyfs_network:
+        driver: bridge

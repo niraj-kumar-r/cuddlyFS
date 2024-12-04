@@ -1,10 +1,10 @@
 debug: true
 
 namenode:
-    bind_address: "[::]:50051"
+    bind_address: "0.0.0.0:50051"
 
 datanode:
-    namenode_rpc_address: "http://192.168.65.9:50051"
+    namenode_rpc_address: "http://namenode:50051"
 
 packet_size: 8192
 block_size: 65536

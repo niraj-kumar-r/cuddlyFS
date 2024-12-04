@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use tonic::{Request, Response, Status};
+use tracing::debug;
 
 use crate::{
     cuddlyproto::{
@@ -129,16 +130,22 @@ impl FileService for NamenodeFileService {
         &self,
         request: Request<CreateFileRequest>,
     ) -> Result<Response<CreateFileResponse>, Status> {
+        debug!("Received request to create file: {:?}", request);
         let request = request.into_inner();
         let res = self.data_registry.start_file_create(&request.file_path);
 
         match res {
-            Ok(Some((block, targets))) => Ok(Response::new(CreateFileResponse {
-                block_with_targets: Some(cuddlyproto::BlockWithTargets {
-                    block: Some(block.into()),
-                    targets: targets.into_iter().map(|target| target.into()).collect(),
-                }),
-            })),
+            Ok(Some((block, targets))) => {
+                let block = Some(block.into());
+                let targets = targets.into_iter().map(|info| info.into()).collect();
+                debug!(
+                    "Returning file create response with Block: {:?}, Targets: {:?}",
+                    block, targets
+                );
+                Ok(Response::new(CreateFileResponse {
+                    block_with_targets: Some(cuddlyproto::BlockWithTargets { block, targets }),
+                }))
+            }
             Ok(None) => Err(Status::failed_precondition(
                 "Cannot create file, not enough avaialable datanodes with free space",
             )),

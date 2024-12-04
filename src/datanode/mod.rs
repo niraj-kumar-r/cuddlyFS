@@ -8,7 +8,6 @@ use crate::{
 
 use chrono::Utc;
 use datanode_data_handler::DatanodeDataHandler;
-use local_ip_address::local_ip;
 use log::{error, info, warn};
 use tokio::{
     net::{TcpListener, TcpStream},
@@ -43,7 +42,8 @@ impl Datanode {
             .unwrap_or_else(|_| "50052".to_string())
             .parse::<u16>()
             .unwrap_or(50052);
-        let socket = SocketAddr::new(local_ip().unwrap(), port);
+        // let socket = SocketAddr::new(local_ip_address::local_ip().unwrap(), port);
+        let socket = SocketAddr::new(local_ip_address::local_ip().unwrap(), port);
         info!("Datanode socket address: {}", socket);
 
         Ok(Datanode {
@@ -67,7 +67,10 @@ impl Datanode {
             )
             .await
             .map_err(|err| {
-                CuddlyError::RPCError(format!("Could not connect to namenode: {}", err))
+                CuddlyError::RPCError(format!(
+                    "Could not connect to namenode on addr {} : {}",
+                    APP_CONFIG.datanode.namenode_rpc_address, err
+                ))
             })?,
             cancel_token,
             shutdown_send,

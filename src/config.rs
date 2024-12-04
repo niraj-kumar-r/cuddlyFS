@@ -32,6 +32,7 @@ pub struct AppConfig {
     pub block_size: u64,
     pub replication_factor: u64,
     pub xfer_port: u32,
+    pub host_ip: String,
 }
 
 impl AppConfig {
@@ -59,6 +60,7 @@ impl Default for AppConfig {
             block_size: 64 * 1024 * 1024,
             replication_factor: 3,
             xfer_port: 50010,
+            host_ip: "http://[::1]".into(),
         }
     }
 }
