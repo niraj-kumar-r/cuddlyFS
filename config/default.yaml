@@ -5,7 +5,7 @@ namenode:
     name_dir: "/tmp/cuddlyfs/namenode"
 
 datanode:
-    namenode_rpc_address: "http://[::1]:50051"
+    namenode_rpc_address: "http://192.168.65.9:50051"
     data_dir: "/tmp/cuddlyfs/datanode"
     disk_check_interval: 3000
 
