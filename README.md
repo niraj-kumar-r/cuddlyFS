@@ -9,6 +9,7 @@ A distributed file system implemented in Rust.
 -   [Architecture](#architecture)
 -   [Installation](#installation)
 -   [Usage](#usage)
+-   [Tutorial](#tutorial)
 -   [Configuration](#configuration)
 -   [Development](#development)
 -   [Contributing](#contributing)
@@ -62,7 +63,7 @@ To install cuddlyFS as a library, add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cuddlyfs = "0.1.1"
+cuddlyfs = "0.1.2"
 ```
 
 or run:
@@ -90,7 +91,7 @@ To compile cuddlyFS from source, follow these steps:
 
 ## Usage
 
-For detailed usage instructions, refer to the [rust docs](https://docs.rs/cuddlyfs/0.1.1/cuddlyfs/)
+For detailed usage instructions, refer to the [rust docs](https://docs.rs/cuddlyfs/0.1.2/cuddlyfs/)
 
 To start the NameNode and DataNodes, use the following commands:
 
@@ -119,6 +120,44 @@ A simple compose file is also provided to start a basic cluster of NameNode and 
 # Start the cluster
 docker-compose up
 ```
+
+## Tutorial
+
+To get started with cuddlyFS, follow these steps:
+
+1. Clone the repository and build the project (see the [Installation](#installation) section for instructions).
+
+2. Make sure Protobuf and Docker Desktop are installed on your system, and Docker Daemon is running.
+
+3. Spin up a cluster of NameNode and DataNodes using Docker Compose:
+
+    ```sh
+    docker-compose up
+    ```
+
+4. Use the client to interact with the file system:
+
+    ```sh
+    cargo run --bin cuddly_client report
+    ```
+
+5. Create a new file:
+
+    ```sh
+    cargo run --bin cuddly_client -- put <local_file_path> /<remote_file_path>
+    ```
+
+6. List the files in the file system:
+
+    ```sh
+    cargo run --bin cuddly_client -- ls /
+    ```
+
+7. Get the contents of a file:
+
+    ```sh
+    cargo run --bin cuddly_client -- get /<remote_file_path> <local_file_path>
+    ```
 
 ## Configuration
 
