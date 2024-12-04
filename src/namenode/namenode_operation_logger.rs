@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use tokio::fs::File;
 use tokio::io::{AsyncBufReadExt, AsyncSeekExt, AsyncWriteExt, BufStream};
 
-use tracing::error;
+use log::error;
 
 /// A namenode modification.
 #[derive(Debug, Deserialize, Serialize, PartialEq)]

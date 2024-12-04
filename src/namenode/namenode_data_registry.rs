@@ -1,13 +1,13 @@
 use std::{
     collections::HashSet,
-    net::IpAddr,
+    net::SocketAddr,
     num::NonZero,
     str::FromStr,
     sync::{Mutex, RwLock},
 };
 
 use chrono::{DateTime, Utc};
-use log::info;
+use log::{debug, info};
 use lru::LruCache;
 use rand::{seq::SliceRandom, thread_rng};
 use tokio::time;
@@ -65,6 +65,7 @@ const HEARTBEAT_RECHECK_INTERVAL: u64 = 20;
 #[derive(Debug)]
 pub(super) struct DataRegistry {
     heartbeat_cache: Mutex<LruCache<Uuid, DateTime<Utc>>>,
+    socket_to_uuid: RwLock<LruCache<SocketAddr, Uuid>>,
     cancel_token: CancellationToken,
     block_to_datanodes: RwLock<KeyToDataAndIdMap<Uuid, Block, Uuid>>,
     datanode_to_blocks: RwLock<KeyToDataAndIdMap<Uuid, DatanodeInfo, Uuid>>,
@@ -84,6 +85,7 @@ impl DataRegistry {
         let data_registry = Self {
             // start_time: Utc::now(),
             heartbeat_cache: Mutex::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
+            socket_to_uuid: RwLock::new(LruCache::new(NonZero::new(CACHE_SIZE).unwrap())),
             block_to_datanodes: RwLock::new(KeyToDataAndIdMap::new()),
             datanode_to_blocks: RwLock::new(KeyToDataAndIdMap::new()),
             namenode_progress_tracker: RwLock::new(NamenodeProgressTracker::new()),
@@ -118,6 +120,13 @@ impl DataRegistry {
             .as_ref()
             .map(|id| id.datanode_uuid.clone());
 
+        let datanode_socket = datanode_registration
+            .datanode_id
+            .as_ref()
+            .map(|id| SocketAddr::from_str(&id.socket_addr).ok())
+            .unwrap()
+            .unwrap();
+
         if let Some(uuid) = &datanode_uuid {
             let r = self
                 .heartbeat_cache
@@ -126,11 +135,11 @@ impl DataRegistry {
                 .put(Uuid::parse_str(&uuid).unwrap(), Utc::now());
 
             match r {
-                Some(previous_instant) => {
-                    info!(
-                        "Updated heartbeat for {}. Previous heartbeat was at {:?}",
-                        uuid, previous_instant
-                    );
+                Some(_previous_instant) => {
+                    // info!(
+                    //     "Updated heartbeat for {}. Previous heartbeat was at {:?}",
+                    //     uuid, previous_instant
+                    // );
                 }
                 None => {
                     info!("New Datanode Connected with uuid: {}", uuid);
@@ -139,10 +148,10 @@ impl DataRegistry {
 
             let mut datanode_to_blocks = self.datanode_to_blocks.write().unwrap();
             let datanode_info = DatanodeInfo {
-                ip_address: datanode_registration
+                socket_address: datanode_registration
                     .datanode_id
                     .as_ref()
-                    .and_then(|id| IpAddr::from_str(&id.ip_addr).ok())
+                    .and_then(|id| SocketAddr::from_str(&id.socket_addr).ok())
                     .unwrap(),
 
                 datanode_uuid: Uuid::parse_str(&datanode_uuid.as_ref().unwrap()).unwrap(),
@@ -150,6 +159,9 @@ impl DataRegistry {
                 used_capacity: storage_reports.iter().map(|report| report.dfs_used).sum(),
             };
             datanode_to_blocks.update_data(datanode_info.datanode_uuid, datanode_info);
+
+            let mut socket_to_uuid = self.socket_to_uuid.write().unwrap();
+            socket_to_uuid.put(datanode_socket, Uuid::parse_str(&uuid).unwrap());
             let response = cuddlyproto::HeartbeatResponse {
                 status: Some(cuddlyproto::StatusCode {
                     success: true,
@@ -195,6 +207,15 @@ impl DataRegistry {
 
         for uuid in to_remove {
             cache.pop(&uuid);
+            let socket_to_uuid = self.socket_to_uuid.read().unwrap();
+            let socket = socket_to_uuid
+                .iter()
+                .find(|(_, v)| v == &&uuid)
+                .map(|(k, _)| k);
+            if let Some(socket) = socket {
+                let mut socket_to_uuid = self.socket_to_uuid.write().unwrap();
+                socket_to_uuid.pop(socket);
+            }
             info!(
                 "Removed Datanode with uuid (did not receive heartbeat): {}",
                 uuid
@@ -214,9 +235,22 @@ impl DataRegistry {
     pub(crate) fn block_received(&self, node_id: &str, block: &Block) -> CuddlyResult<()> {
         info!("Block received from node_id: {}, {}", node_id, block);
 
-        let datanode_uuid = match Uuid::parse_str(node_id) {
-            Ok(datanode_uuid) => datanode_uuid,
-            Err(_) => return Err(CuddlyError::FSError(format!("Invalid UUID: {}", node_id))),
+        // let datanode_uuid = match Uuid::parse_str(node_id) {
+        //     Ok(datanode_uuid) => datanode_uuid,
+        //     Err(_) => return Err(CuddlyError::FSError(format!("Invalid UUID: {}", node_id))),
+        // };
+
+        let datanode_uuid = {
+            let mut socket_to_uuid = self.socket_to_uuid.write().unwrap();
+            match socket_to_uuid.get(&SocketAddr::from_str(node_id).unwrap()) {
+                Some(uuid) => uuid.clone(),
+                None => {
+                    return Err(CuddlyError::FSError(format!(
+                        "Block received from unregistered datanode '{}'.",
+                        node_id
+                    )))
+                }
+            }
         };
 
         let new_reported = {
@@ -323,13 +357,17 @@ impl DataRegistry {
 
         let mut target_nodes = HashSet::new();
         let mut available_nodes = self.get_alive_datanodes();
+        debug!("Available nodes: {:?}", available_nodes);
         available_nodes.shuffle(&mut thread_rng());
 
         for node_info in available_nodes {
+            debug!("Checking node: {:?}", node_info);
             if node_info.free_capacity() > APP_CONFIG.block_size {
+                debug!("Node has enough capacity: {:?}", node_info.free_capacity());
                 target_nodes.insert(node_info);
             }
             if target_nodes.len() as u64 >= APP_CONFIG.replication_factor as u64 {
+                debug!("Found enough available nodes for file creation");
                 let block_id = self.next_block_id();
                 let seq = self
                     .namenode_progress_tracker
@@ -339,10 +377,12 @@ impl DataRegistry {
                 let block = Block::new(block_id, 0, seq);
                 let mut blocks = HashSet::new();
                 blocks.insert(block);
+                debug!("Returning block: {:?}, targets: {:?}", block, target_nodes);
                 return Ok(Some((block, target_nodes.into_iter().collect())));
             }
         }
 
+        debug!("Not enough available nodes found for file creation");
         Ok(None)
     }
 

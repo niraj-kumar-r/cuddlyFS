@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::{env, net::SocketAddr, sync::Arc};
 
 use crate::{
     config::APP_CONFIG,
@@ -7,20 +7,19 @@ use crate::{
 };
 
 use chrono::Utc;
-use datanode_client_service::DatanodeClientService;
-use local_ip_address::local_ip;
+use datanode_data_handler::DatanodeDataHandler;
 use log::{error, info, warn};
-use tokio::sync::mpsc;
+use tokio::{
+    net::{TcpListener, TcpStream},
+    sync::mpsc,
+};
 use tokio_util::sync::CancellationToken;
-use tonic::transport::{Channel, Server};
+use tonic::transport::Channel;
 use uuid::Uuid;
 
-use self::cuddlyproto::{
-    client_data_node_service_server::ClientDataNodeServiceServer,
-    node_service_client::NodeServiceClient, StorageReportProto,
-};
+use self::cuddlyproto::{node_service_client::NodeServiceClient, StorageReportProto};
 
-mod datanode_client_service;
+mod datanode_data_handler;
 mod datanode_data_registry;
 mod datanode_disk_info;
 
@@ -39,9 +38,17 @@ impl Datanode {
         shutdown_send: mpsc::UnboundedSender<i8>,
     ) -> CuddlyResult<Self> {
         let datanode_uuid = Uuid::new_v4();
+        let port = env::var("PORT")
+            .unwrap_or_else(|_| "50052".to_string())
+            .parse::<u16>()
+            .unwrap_or(50052);
+        // let socket = SocketAddr::new(local_ip_address::local_ip().unwrap(), port);
+        let socket = SocketAddr::new(local_ip_address::local_ip().unwrap(), port);
+        info!("Datanode socket address: {}", socket);
+
         Ok(Datanode {
             datanode_id: cuddlyproto::DatanodeIdProto {
-                ip_addr: local_ip().unwrap().to_string(),
+                socket_addr: socket.to_string(),
                 host_name: hostname::get()
                     .unwrap_or_else(|_| "unknown".into())
                     .to_string_lossy()
@@ -60,7 +67,10 @@ impl Datanode {
             )
             .await
             .map_err(|err| {
-                CuddlyError::RPCError(format!("Could not connect to namenode: {}", err))
+                CuddlyError::RPCError(format!(
+                    "Could not connect to namenode on addr {} : {}",
+                    APP_CONFIG.datanode.namenode_rpc_address, err
+                ))
             })?,
             cancel_token,
             shutdown_send,
@@ -99,29 +109,60 @@ impl Datanode {
         &self,
         received_block_tx: tokio::sync::mpsc::Sender<cuddlyproto::Block>,
     ) -> CuddlyResult<()> {
-        let client_service = Server::builder()
-            .add_service(ClientDataNodeServiceServer::new(
-                DatanodeClientService::new(
-                    Arc::clone(&self.datanode_data_registry),
-                    received_block_tx,
-                ),
-            ))
-            .serve(SocketAddr::new(
-                self.datanode_id.ip_addr.parse().unwrap(),
-                self.datanode_id.xfer_port as u16,
-            ));
+        // let listener = TcpListener::bind(format!(
+        //     "{}:{}",
+        //     self.datanode_id.socket_addr, self.datanode_id.xfer_port
+        // ))
+        // .await?;
+        let bind_addr = format!(
+            "0.0.0.0:{}",
+            self.datanode_id
+                .socket_addr
+                .split(":")
+                .last()
+                .expect("Could not get port")
+                .parse::<u16>()
+                .expect("Could not parse port")
+                + 10000
+        );
+        let listener = TcpListener::bind(bind_addr.clone()).await?;
+        info!("Listening on {} for TCP requests", bind_addr);
 
-        tokio::select! {
-            _ = client_service => {
-                info!("Client service stopped");
-            },
-            _ = self.cancel_token.cancelled() => {
-                warn!("Client service loop cancelled");
-                return Ok(());
+        loop {
+            tokio::select! {
+                incoming = listener.accept() => {
+                    let (tcp_stream, socket_addr) = incoming?;
+                    info!("New connection from {:?}", socket_addr);
+                    let block_sender = received_block_tx.clone();
+                    self.handle_incoming_request(tcp_stream, block_sender);
+                }
+                _ = self.cancel_token.cancelled() => {
+                    warn!("Client service loop cancelled");
+                    return Ok(());
+                }
             }
         }
+    }
 
-        Ok(())
+    fn handle_incoming_request(
+        &self,
+        tcp_stream: TcpStream,
+        block_sender: tokio::sync::mpsc::Sender<cuddlyproto::Block>,
+    ) {
+        let data_registry = Arc::clone(&self.datanode_data_registry);
+        let packet_size = APP_CONFIG.packet_size;
+
+        tokio::spawn(async move {
+            let mut handler =
+                DatanodeDataHandler::new(tcp_stream, data_registry, packet_size, block_sender);
+            match handler.handle().await {
+                Ok(()) => (),
+                Err(e) => error!(
+                    "An error occured while handling data server request: {:?}",
+                    e
+                ),
+            }
+        });
     }
 
     async fn run_namenode_services(
@@ -136,7 +177,7 @@ impl Datanode {
                 _ = heartbeat_interval.tick() => {
                     match self.send_heartbeat().await {
                         Ok(_) => {
-                            info!("Heartbeat sent successfully");
+                            // info!("Heartbeat sent successfully");
                             consecutive_errors = 0;
                         }
                         Err(e) => {
@@ -211,7 +252,7 @@ impl Datanode {
         if let Some(block) = block {
             info!("New block received {:?}", block);
             let message = cuddlyproto::BlockReceivedRequest {
-                address: self.datanode_id.ip_addr.to_string(),
+                address: self.datanode_id.socket_addr.to_string(),
                 block: Some(block),
             };
             let mut client = self.get_node_service_client()?;

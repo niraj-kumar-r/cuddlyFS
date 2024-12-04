@@ -7,7 +7,7 @@ use tokio_util::sync::CancellationToken;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() -> CuddlyResult<()> {
-    env::set_var("RUST_LOG", "info");
+    env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
     let addr: SocketAddr = APP_CONFIG.namenode.bind_address.parse().unwrap();
@@ -17,6 +17,7 @@ async fn main() -> CuddlyResult<()> {
 
     let running_namenode_handle = tokio::spawn(async move {
         info!("Starting namenode on {}", addr);
+        info!("Local Ip Address: {:?}", local_ip_address::local_ip());
         let _ = namenode.run(addr).await;
     });
 

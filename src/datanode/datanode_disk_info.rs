@@ -1,6 +1,7 @@
 use std::{path::PathBuf, process::Command};
 
 use chrono::{DateTime, Duration, Utc};
+use log::info;
 
 use crate::{errors::CuddlyResult, APP_CONFIG};
 
@@ -16,6 +17,7 @@ pub(crate) struct DiskInfo {
 #[allow(dead_code)]
 impl DiskInfo {
     pub fn new(data_dir: &PathBuf) -> CuddlyResult<Self> {
+        info!("Creating DiskInfo for {:?}", data_dir);
         let mut disk_info = Self {
             data_dir: data_dir.clone(),
             used: 0,
@@ -65,16 +67,17 @@ impl DiskInfo {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-//     #[test]
-//     fn test_disk_info() {
-//         let mut disk_info = DiskInfo::new().unwrap();
-//         let used = disk_info.get_used().unwrap();
-//         let available = disk_info.get_available().unwrap();
-//         assert!(used > 0);
-//         assert!(available > 0);
-//     }
-// }
+    #[test]
+    fn test_disk_info() {
+        let mut disk_info = DiskInfo::new(&PathBuf::from("/tmp/cuddlyfs/datanode")).unwrap();
+        disk_info.refresh(true).unwrap();
+        let used = disk_info.get_used().unwrap();
+        let available = disk_info.get_available().unwrap();
+        assert!(used > 0);
+        assert!(available > 0);
+    }
+}

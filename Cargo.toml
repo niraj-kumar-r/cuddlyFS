@@ -1,6 +1,6 @@
 [package]
 name = "cuddlyfs"
-version = "0.1.0-beta.2"
+version = "0.1.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "A distributed file system with a cuddly API"
@@ -14,6 +14,7 @@ authors = ["Niraj Kumar"]
 [dependencies]
 bytes = "1.7.2"
 chrono = "0.4.38"
+clap = { version = "4.5.21", features = ["cargo", "derive"] }
 config = "0.14.0"
 env_logger = "0.11.5"
 hostname = "0.4.0"
@@ -21,7 +22,6 @@ lazy_static = "1.5.0"
 local-ip-address = "0.6.3"
 log = "0.4.22"
 lru = "0.12.5"
-md5 = "0.7.0"
 prost = "0.13.3"
 prost-types = "0.13.3"
 rand = "0.8.5"
@@ -31,7 +31,6 @@ tokio = { version = "1", features = ["full"] }
 tokio-stream = { version = "0.1.16", features = ["full"] }
 tokio-util = "0.7.12"
 tonic = "0.12.3"
-tracing = "0.1.40"
 uuid = { version = "1.11.0", features = ["v4", "serde"] }
 
 [build-dependencies]

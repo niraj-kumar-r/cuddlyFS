@@ -10,7 +10,7 @@ fn main() {
                 "proto/directory.proto",
                 "proto/datanode.proto",
                 "proto/namenode.proto",
-                "proto/client_to_datanode.proto",
+                "proto/data_transfer.proto",
             ],
             &["proto"],
         )

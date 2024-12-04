@@ -44,9 +44,6 @@ impl Namenode {
             .add_service(NodeServiceServer::new(NamenodeNodeService::new(
                 Arc::clone(&self.data_registry),
             )))
-            // .add_service(DirectoryServiceServer::new(NamenodeDirectoryService::new(
-            //     Arc::clone(&self.data_registry),
-            // )))
             .add_service(FileServiceServer::new(NamenodeFileService::new(
                 Arc::clone(&self.data_registry),
             )))
